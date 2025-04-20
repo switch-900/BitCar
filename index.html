@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3DBitmap Driving Game</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: #181818;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        #canvasContainer {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #181818;
+            z-index: 1;
+        }
+        #uiBar {
+            position: absolute;
+            top: 0; left: 0; width: 100vw;
+            background: rgba(24,24,24,0.95);
+            color: #ffa94d;
+            padding: 8px 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            font-size: 1.1em;
+        }
+        #blockForm input[type="text"] {
+            padding: 6px 10px;
+            border-radius: 4px 0 0 4px;
+            border: 1px solid #ffa94d;
+            outline: none;
+            font-size: 1em;
+            width: 120px;
+        }
+        #blockForm button {
+            padding: 6px 12px;
+            border-radius: 0 4px 4px 0;
+            border: none;
+            background: #ffa94d;
+            color: #181818;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        #blockInfo {
+            margin-left: 24px;
+            font-size: 0.95em;
+            color: #fff;
+        }
+        #loadingOverlay {
+            position: fixed;
+            top:0; left:0; width:100vw; height:100vh;
+            background: rgba(16,16,24,0.95);
+            color: #ffa94d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-size: 1.3em;
+            letter-spacing: 1px;
+        }
+        #loadingBar {
+            width: 240px;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
+            margin-top: 18px;
+            overflow: hidden;
+        }
+        #loadingBarProgress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,#f7931a,#ffa94d);
+            transition: width 0.2s;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(24,24,24,0.85);
+            color: #ffa94d;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 1em;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvasContainer"></div>
+    <div id="uiBar">
+        <form id="blockForm" style="display:inline-flex;">
+            <input type="text" id="blockHash" value="676767" placeholder="Block # or hash">
+            <button type="submit">Load</button>
+        </form>
+        <span id="blockInfo">Block: <span id="blockHeight">-</span> | TX: <span id="txCount">-</span> | BTC: <span id="totalBtc">-</span> | <span id="blockTime">-</span></span>
+    </div>
+    <div id="instructions">
+        <b>Arrow keys</b> to drive. <b>Load a block</b> to generate a new track!
+    </div>
+    <div id="loadingOverlay" style="display:none;">
+        <div id="loadingText">Loading block data...</div>
+        <div id="loadingBar"><div id="loadingBarProgress"></div></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    // --- Minimal Block Data Fetch ---
+    let storedTransactions = [];
+    let blockMetadata = null;
+
+    async function loadBlockData(blockHash) {
+        showLoading(true, 0, "Loading block data...");
+        try {
+            const apiUrl = `https://blockchain.info/rawblock/${blockHash}?cors=true`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error("Block not found");
+            showLoading(true, 30, "Parsing block data...");
+            const data = await response.json();
+            storedTransactions = data.tx || [];
+            blockMetadata = {
+                height: data.height,
+                hash: data.hash,
+                time: data.time,
+                tx_count: data.tx ? data.tx.length : 0
+            };
+            showLoading(true, 60, "Generating track...");
+            updateBlockInfo(blockMetadata);
+            createDrivingTrack(storedTransactions);
+            showLoading(false, 100, "Done");
+        } catch (e) {
+            showLoading(true, 100, "Error: " + e.message);
+            setTimeout(()=>showLoading(false), 1200);
+        }
+    }
+
+    function updateBlockInfo(meta) {
+        document.getElementById('blockHeight').textContent = meta.height || '-';
+        document.getElementById('txCount').textContent = meta.tx_count || '-';
+        let totalBtc = 0;
+        if (storedTransactions && storedTransactions.length > 0) {
+            storedTransactions.forEach(tx => {
+                if (tx.out && Array.isArray(tx.out)) {
+                    tx.out.forEach(output => { totalBtc += output.value || 0; });
+                }
+            });
+            totalBtc = (totalBtc / 100000000).toFixed(8);
+        }
+        document.getElementById('totalBtc').textContent = totalBtc || '-';
+        document.getElementById('blockTime').textContent = meta.time ? new Date(meta.time * 1000).toLocaleString() : '-';
+    }
+
+    function showLoading(show, percent, text) {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = show ? 'flex' : 'none';
+        if (typeof percent === 'number') {
+            document.getElementById('loadingBarProgress').style.width = percent + "%";
+        }
+        if (text) document.getElementById('loadingText').textContent = text;
+    }
+
+    // --- Driving Game Logic ---
+    let scene, camera, renderer;
+    let trackSegments = [];
+    let car, carSpeed = 0, carMaxSpeed = 2.5, carSteer = 0, carAngle = 0;
+    let carPosition = new THREE.Vector3(0, 5, 0);
+    let carVelocity = new THREE.Vector3(0, 0, 0);
+    let carDirection = new THREE.Vector3(0, 0, 1);
+    let carOnGround = false;
+    let cameraOffset = new THREE.Vector3(0, 10, -22);
+    let keys = {};
+    let gravity = -0.25;
+    let friction = 0.98;
+    let groundFriction = 0.92;
+    let jumpPower = 0.0; // set to >0 for jump support
+    let trackWidth = 16; // Increased width for easier driving
+    let respawnPoint = null;
+
+    // Helper for smooth track connection (Catmull-Rom spline)
+    function smoothTrackPoints(points) {
+        // Adjust hills so there are no step ups/downs: smooth y between points
+        // We'll use a moving average to smooth the y values
+        let yVals = points.map(p => p.p1.y);
+        let smoothYs = [];
+        for (let i = 0; i < yVals.length; i++) {
+            let sum = 0, count = 0;
+            for (let j = -2; j <= 2; j++) {
+                if (i + j >= 0 && i + j < yVals.length) {
+                    sum += yVals[i + j];
+                    count++;
+                }
+            }
+            smoothYs[i] = sum / count;
+        }
+        // Set all p1.y and p2.y to the smoothed value for both ends of each segment
+        for (let i = 0; i < points.length; i++) {
+            points[i].p1.y = smoothYs[i];
+            if (i < points.length - 1) {
+                points[i].p2.y = smoothYs[i + 1];
+            } else {
+                points[i].p2.y = smoothYs[i];
+            }
+        }
+
+        // Use CatmullRomCurve3 for smooth interpolation
+        let curvePoints = points.map(p => p.p1.clone());
+        curvePoints.push(points[points.length - 1].p2.clone());
+        let curve = new THREE.CatmullRomCurve3(curvePoints, false, 'catmullrom', 0.5);
+        let smooth = [];
+        let N = points.length * 8;
+        for (let i = 0; i < N; i++) {
+            let t1 = i / N;
+            let t2 = (i + 1) / N;
+            let p1 = curve.getPoint(t1);
+            let p2 = curve.getPoint(t2);
+            let idx = Math.floor(t1 * points.length);
+            let width = points[idx] ? points[idx].width : trackWidth;
+            smooth.push({ p1, p2, width });
+        }
+        return smooth;
+    }
+
+    // --- ThreeJS Initialization ---
+    function initThreeJS() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 10, -30);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvasContainer').appendChild(renderer.domElement);
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0x888888));
+        let dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 30, 10);
+        scene.add(dirLight);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    // Helper for smooth track connection
+    function lerpVec3(a, b, t) {
+        return new THREE.Vector3(
+            a.x + (b.x - a.x) * t,
+            a.y + (b.y - a.y) * t,
+            a.z + (b.z - a.z) * t
+        );
+    }
+
+    // Generate flat track with smooth hills and turns
+    function createDrivingTrack(transactions) {
+        clearScene();
+        trackSegments = [];
+        let points = [];
+        let pos = new THREE.Vector3(0, 0, 0);
+        let angleY = 0;
+
+        // 1. Generate points for each segment
+        transactions.forEach((tx, i) => {
+            let hashVal = parseInt(tx.hash.slice(-2), 16);
+            let type = hashVal % 3; // 0: straight, 1: left, 2: right
+            let length = 20 + ((tx.out ? tx.out.length : 1) * 5);
+            let width = trackWidth;
+            // Hill height based on tx value
+            let value = tx.out ? tx.out.reduce((acc, cur) => acc + (cur.value || 0), 0) : 0;
+            let hill = ((value / 1e8) % 1) * 12 - 6; // -6 to +6
+
+            // Angle based on hash
+            if (type === 1) angleY += Math.PI / 12;
+            if (type === 2) angleY -= Math.PI / 12;
+
+            // Next point
+            let next = new THREE.Vector3(
+                pos.x + Math.sin(angleY) * length,
+                hill,
+                pos.z + Math.cos(angleY) * length
+            );
+            points.push({ p1: pos.clone(), p2: next.clone(), width, angleY });
+            pos = next;
+        });
+
+        // Smooth the track (no step up/downs)
+        let smoothSegments = smoothTrackPoints(points);
+
+        // Create segments
+        for (let i = 0; i < smoothSegments.length; i++) {
+            let { p1, p2, width } = smoothSegments[i];
+            let segLen = p1.distanceTo(p2);
+            let mid = lerpVec3(p1, p2, 0.5);
+            let boxGeom = new THREE.BoxGeometry(width, 2, segLen);
+            let color = 0x222222 + (i * 1000);
+            let mat = new THREE.MeshPhongMaterial({ color: color });
+            let mesh = new THREE.Mesh(boxGeom, mat);
+
+            mesh.position.copy(mid);
+            let dx = p2.x - p1.x, dz = p2.z - p1.z;
+            mesh.rotation.y = Math.atan2(dx, dz);
+            let dy = p2.y - p1.y;
+            mesh.rotation.x = Math.atan2(dy, segLen);
+
+            scene.add(mesh);
+            trackSegments.push({ mesh, p1: p1.clone(), p2: p2.clone(), width, segLen });
+        }
+
+        // Place car at start
+        createCar(smoothSegments[0].p1, Math.atan2(
+            smoothSegments[0].p2.x - smoothSegments[0].p1.x,
+            smoothSegments[0].p2.z - smoothSegments[0].p1.z
+        ));
+        // Store track points for collision
+        trackSegments.trackPoints = smoothSegments;
+        // Set respawn point to start
+        respawnPoint = {
+            pos: smoothSegments[0].p1.clone(),
+            angle: Math.atan2(
+                smoothSegments[0].p2.x - smoothSegments[0].p1.x,
+                smoothSegments[0].p2.z - smoothSegments[0].p1.z
+            )
+        };
+    }
+
+    function createCar(startPos, startAngle) {
+        if (car) scene.remove(car);
+        let geometry = new THREE.BoxGeometry(3, 2, 5);
+        let material = new THREE.MeshPhongMaterial({ color: 0xf7931a });
+        car = new THREE.Mesh(geometry, material);
+        car.position.copy(startPos || new THREE.Vector3(0, 5, 0));
+        car.rotation.y = startAngle || 0;
+        scene.add(car);
+        carSpeed = 0;
+        carAngle = startAngle || 0;
+        carPosition.copy(car.position);
+        carVelocity.set(0, 0, 0);
+        carDirection.set(Math.sin(carAngle), 0, Math.cos(carAngle));
+    }
+
+    window.addEventListener('keydown', e => { keys[e.code] = true; });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    // --- Car Physics and Track Collision ---
+    function updateCar() {
+        // Car controls (arcade style)
+        if (keys['ArrowUp']) carSpeed = Math.min(carSpeed + 0.08, carMaxSpeed);
+        else carSpeed = Math.max(carSpeed - 0.04, 0);
+        if (keys['ArrowLeft']) carAngle += 0.045 * (carSpeed / carMaxSpeed + 0.5);
+        if (keys['ArrowRight']) carAngle -= 0.045 * (carSpeed / carMaxSpeed + 0.5);
+
+        // Update direction
+        carDirection.set(Math.sin(carAngle), 0, Math.cos(carAngle)).normalize();
+
+        // Apply forward movement
+        carVelocity.x = carDirection.x * carSpeed;
+        carVelocity.z = carDirection.z * carSpeed;
+
+        // Gravity
+        carVelocity.y += gravity;
+
+        // Move car
+        carPosition.add(carVelocity);
+
+        // Track collision: find closest segment below car, and set y if on track
+        carOnGround = false;
+        let minDist = 99999, groundY = null, groundNormal = new THREE.Vector3(0,1,0);
+        let groundAngle = 0;
+        let closestSegIdx = -1;
+        let closestT = 0;
+        for (let i = 0; i < trackSegments.length; i++) {
+            let seg = trackSegments[i];
+            let segVec = new THREE.Vector3().subVectors(seg.p2, seg.p1);
+            let segLen = segVec.length();
+            let toCar = new THREE.Vector3().subVectors(carPosition, seg.p1);
+            let t = Math.max(0, Math.min(1, segVec.dot(toCar) / (segLen * segLen)));
+            let closest = lerpVec3(seg.p1, seg.p2, t);
+            let distXZ = Math.sqrt(
+                Math.pow(carPosition.x - closest.x, 2) +
+                Math.pow(carPosition.z - closest.z, 2)
+            );
+            if (distXZ < seg.width / 2 + 1) {
+                let yOnTrack = closest.y + 1.5;
+                let yDiff = carPosition.y - yOnTrack;
+                if (yDiff < 2 && yDiff > -2 && Math.abs(yDiff) < minDist) {
+                    minDist = Math.abs(yDiff);
+                    groundY = yOnTrack;
+                    groundNormal = new THREE.Vector3(
+                        (seg.p2.y - seg.p1.y) / segLen * segVec.x / segLen,
+                        1,
+                        (seg.p2.y - seg.p1.y) / segLen * segVec.z / segLen
+                    ).normalize();
+                    groundAngle = Math.atan2(seg.p2.y - seg.p1.y, segLen);
+                    closestSegIdx = i;
+                    closestT = t;
+                }
+            }
+        }
+        // If on ground, smoothly transition car's y and tilt to match track
+        if (groundY !== null && carPosition.y <= groundY + 1.5) {
+            carPosition.y += (groundY - carPosition.y) * 0.5;
+            carVelocity.y = 0;
+            carOnGround = true;
+            carVelocity.x *= groundFriction;
+            carVelocity.z *= groundFriction;
+            car.rotation.x += (groundAngle - car.rotation.x) * 0.2;
+            // Update respawn point to last valid position on track
+            if (closestSegIdx >= 0) {
+                let seg = trackSegments[closestSegIdx];
+                let segVec = new THREE.Vector3().subVectors(seg.p2, seg.p1);
+                let yaw = Math.atan2(segVec.x, segVec.z);
+                respawnPoint = {
+                    pos: lerpVec3(seg.p1, seg.p2, closestT).clone(),
+                    angle: yaw
+                };
+            }
+        } else {
+            carVelocity.x *= friction;
+            carVelocity.z *= friction;
+            car.rotation.x += (0 - car.rotation.x) * 0.1;
+        }
+
+        // Respawn if car falls off
+        if (carPosition.y < -30 && respawnPoint) {
+            carPosition.copy(respawnPoint.pos);
+            carAngle = respawnPoint.angle;
+            carVelocity.set(0, 0, 0);
+            carSpeed = 0;
+            car.rotation.x = 0;
+        }
+
+        car.position.copy(carPosition);
+        car.rotation.y = carAngle;
+
+        // Camera follows car
+        let camTarget = carPosition.clone().add(new THREE.Vector3(
+            Math.sin(carAngle) * cameraOffset.z,
+            cameraOffset.y,
+            Math.cos(carAngle) * cameraOffset.z
+        ));
+        camera.position.lerp(camTarget, 0.18);
+        camera.lookAt(car.position);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (car) updateCar();
+        renderer.render(scene, camera);
+    }
+
+    function clearScene() {
+        if (!scene) return;
+        for (let i = scene.children.length - 1; i >= 0; i--) {
+            const obj = scene.children[i];
+            if (obj.isMesh) {
+                scene.remove(obj);
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) obj.material.dispose();
+            }
+        }
+    }
+
+    // --- UI and Startup ---
+    document.getElementById('blockForm').onsubmit = function(e) {
+        e.preventDefault();
+        const blockHash = document.getElementById('blockHash').value;
+        loadBlockData(blockHash);
+    };
+
+    window.onload = function() {
+        initThreeJS();
+        loadBlockData(document.getElementById('blockHash').value);
+        animate();
+    };
+    </script>
+</body>
+</html>
