@@ -160,6 +160,83 @@
             border: 1px solid #fff;
             background: #ff0;
         }
+        #gameUI {
+            position: absolute;
+            top: 50px;
+            left: 16px;
+            background: rgba(24,24,24,0.85);
+            color: #ffa94d;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 1em;
+            z-index: 10;
+        }
+        #gameUI .lives {
+            font-size: 1.5em;
+            color: #ff3333;
+        }
+        #gameUI .boost {
+            margin-top: 5px;
+            height: 8px;
+            width: 100px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+        #gameUI .boost-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #3366ff, #00ccff);
+            border-radius: 4px;
+            transition: width 0.2s;
+        }
+        #gameUI .score {
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.85);
+            color: #ffa94d;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        #gameOverScreen h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        #gameOverScreen button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background: #ffa94d;
+            color: #181818;
+            font-weight: bold;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .collectible {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            margin-left: -15px;
+            margin-top: -15px;
+            border-radius: 50%;
+            background: radial-gradient(#ffcc00, #ff6600);
+            box-shadow: 0 0 15px #ffcc00;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
     </style>
 </head>
 <body>
@@ -172,7 +249,7 @@
         <span id="blockInfo">Block: <span id="blockHeight">-</span> | TX: <span id="txCount">-</span> | BTC: <span id="totalBtc">-</span> | <span id="blockTime">-</span></span>
     </div>
     <div id="instructions">
-        <b>Arrow keys</b> to drive. <b>Load a block</b> to generate a new track!
+        <b>Arrow keys</b> to drive. <b>Shift</b> to boost. <b>Load a block</b> to generate a new track!
     </div>
     <div id="loadingOverlay" style="display:none;">
         <div id="loadingText">Loading block data...</div>
@@ -197,17 +274,30 @@
         <div id="playersList"></div>
     </div>
     <div id="minimap"></div>
+    <div id="gameUI">
+        <div>Lives: <span class="lives">❤️❤️❤️</span></div>
+        <div>Boost: <div class="boost"><div class="boost-bar"></div></div></div>
+        <div class="score">Score: 0</div>
+    </div>
+    <div id="gameOverScreen">
+        <h2>GAME OVER</h2>
+        <div class="final-score">Score: 0</div>
+        <button id="restartGame">Try Again</button>
+    </div>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-    let cachedTransactions = null;
-    let cachedMetadata     = null;
-
     // --- Minimal Block Data Fetch ---
     let storedTransactions = [];
     let blockMetadata = null;
+    let cachedBlockHash = null; // cache the loaded block hash
 
     async function loadBlockData(blockHash) {
+        // Only fetch and reload if not already loaded
+        if (cachedBlockHash === blockHash && storedTransactions.length && blockMetadata) {
+            showLoading(false, 100, "Block already loaded");
+            return;
+        }
         showLoading(true, 0, "Loading block data...");
         try {
             const apiUrl = `https://blockchain.info/rawblock/${blockHash}?cors=true`;
@@ -226,8 +316,7 @@
             updateBlockInfo(blockMetadata);
             createDrivingTrack(storedTransactions);
             showLoading(false, 100, "Done");
-            cachedTransactions = storedTransactions;
-            cachedMetadata     = blockMetadata;
+            cachedBlockHash = blockHash;
         } catch (e) {
             showLoading(true, 100, "Error: " + e.message);
             setTimeout(()=>showLoading(false), 1200);
@@ -275,6 +364,17 @@
     let jumpPower = 0.0; // set to >0 for jump support
     let trackWidth = 16; // Increased width for easier driving
     let respawnPoint = null;
+
+    // Game mechanics variables
+    let lives = 3;
+    let fallCount = 0;
+    let gameOver = false;
+    let score = 0;
+    let boostAmount = 100;
+    let boostRechargeRate = 0.5;
+    let boostDepletionRate = 1;
+    let collectibles = [];
+    let collectibleCount = 0;
 
     // Helper for smooth track connection (Catmull-Rom spline)
     function smoothTrackPoints(points) {
@@ -427,6 +527,17 @@
         Object.values(otherPlayers).forEach(p => {
             scene.add(p.mesh);
         });
+
+        // Reset game state for new track
+        lives = 3;
+        fallCount = 0;
+        gameOver = false;
+        score = 0;
+        boostAmount = 100;
+        updateGameUI();
+
+        // Spawn collectibles on the new track
+        spawnCollectibles();
     }
 
     function createCar(startPos, startAngle) {
@@ -460,13 +571,180 @@
     window.addEventListener('keydown', e => { keys[e.code] = true; });
     window.addEventListener('keyup', e => { keys[e.code] = false; });
 
-    // --- Car Physics and Track Collision ---
+    function updateGameUI() {
+        // Update lives display
+        const livesDisplay = document.querySelector('#gameUI .lives');
+        const hearts = '❤️'.repeat(lives);
+        livesDisplay.textContent = hearts;
+        
+        // Update boost bar
+        const boostBar = document.querySelector('#gameUI .boost-bar');
+        boostBar.style.width = boostAmount + '%';
+        
+        // Update score
+        document.querySelector('#gameUI .score').textContent = 'Score: ' + score;
+    }
+    
+    function showGameOver() {
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        document.querySelector('#gameOverScreen .final-score').textContent = 'Score: ' + score;
+        gameOver = true;
+    }
+    
+    function restartGame() {
+        // Reset game variables
+        lives = 3;
+        fallCount = 0;
+        gameOver = false;
+        score = 0;
+        boostAmount = 100;
+        
+        // Reset car position to start
+        if (respawnPoint) {
+            carPosition.copy(respawnPoint.pos);
+            carAngle = respawnPoint.angle;
+        } else {
+            carPosition.set(0, 5, 0);
+            carAngle = 0;
+        }
+        carVelocity.set(0, 0, 0);
+        carSpeed = 0;
+        
+        // Hide game over screen
+        document.getElementById('gameOverScreen').style.display = 'none';
+        
+        // Update UI
+        updateGameUI();
+        
+        // Spawn collectibles
+        spawnCollectibles();
+    }
+    
+    // Collectible items implementation
+    function spawnCollectibles() {
+        // Remove existing collectibles
+        collectibles.forEach(c => {
+            if (c.object && c.object.parent) c.object.parent.remove(c.object);
+        });
+        collectibles = [];
+        
+        // Only spawn if we have track segments
+        if (!trackSegments || trackSegments.length < 2) return;
+        
+        // Place collectibles along the track
+        const numCollectibles = Math.min(20, trackSegments.length / 2);
+        
+        for (let i = 0; i < numCollectibles; i++) {
+            // Get a random track segment (not the first or last)
+            const segIdx = Math.floor(Math.random() * (trackSegments.length - 2)) + 1;
+            const seg = trackSegments[segIdx];
+            
+            // Random position along segment
+            const t = Math.random();
+            const pos = lerpVec3(seg.p1, seg.p2, t);
+            pos.y += 3; // float above track
+            
+            // Create collectible object
+            const geometry = new THREE.SphereGeometry(1, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffcc00,
+                emissive: 0xffaa00,
+                transparent: true,
+                opacity: 0.8
+            });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.copy(pos);
+            
+            // Add glow effect
+            const glowGeo = new THREE.SphereGeometry(1.5, 8, 8);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0xffcc00,
+                transparent: true,
+                opacity: 0.4
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            sphere.add(glow);
+            
+            scene.add(sphere);
+            
+            collectibles.push({
+                object: sphere,
+                position: pos,
+                collected: false,
+                value: Math.floor(Math.random() * 50) + 10
+            });
+        }
+        
+        collectibleCount = numCollectibles;
+    }
+    
+    function checkCollectibleCollision() {
+        if (!carPosition) return;
+        
+        collectibles.forEach(item => {
+            if (!item.collected && item.object) {
+                const distance = carPosition.distanceTo(item.position);
+                if (distance < 3) {
+                    // Collect the item
+                    item.collected = true;
+                    scene.remove(item.object);
+                    
+                    // Add to score
+                    score += item.value;
+                    
+                    // Add to boost
+                    boostAmount = Math.min(100, boostAmount + 20);
+                    
+                    // Visual feedback
+                    const feedback = document.createElement('div');
+                    feedback.textContent = '+' + item.value;
+                    feedback.style.position = 'absolute';
+                    feedback.style.top = '50%';
+                    feedback.style.left = '50%';
+                    feedback.style.transform = 'translate(-50%, -50%)';
+                    feedback.style.color = '#ffcc00';
+                    feedback.style.fontSize = '2em';
+                    feedback.style.fontWeight = 'bold';
+                    feedback.style.textShadow = '0 0 10px #ff6600';
+                    feedback.style.pointerEvents = 'none';
+                    feedback.style.transition = 'all 1s';
+                    feedback.style.opacity = '1';
+                    document.body.appendChild(feedback);
+                    
+                    // Animate and remove feedback
+                    setTimeout(() => {
+                        feedback.style.opacity = '0';
+                        feedback.style.transform = 'translate(-50%, -100%)';
+                        setTimeout(() => document.body.removeChild(feedback), 1000);
+                    }, 100);
+                    
+                    // Update UI
+                    updateGameUI();
+                }
+            }
+        });
+    }
+
+    // Modified updateCar function with boost and lives
     function updateCar() {
+        if (gameOver) return;
+        
         // Car controls (arcade style)
         if (keys['ArrowUp']) carSpeed = Math.min(carSpeed + 0.08, carMaxSpeed);
         else carSpeed = Math.max(carSpeed - 0.04, 0);
         if (keys['ArrowLeft']) carAngle += 0.045 * (carSpeed / carMaxSpeed + 0.5);
         if (keys['ArrowRight']) carAngle -= 0.045 * (carSpeed / carMaxSpeed + 0.5);
+
+        // Boost control
+        if (keys['ShiftLeft'] && boostAmount > 0) {
+            carSpeed = Math.min(carSpeed + 0.15, carMaxSpeed * 1.5);
+            boostAmount = Math.max(0, boostAmount - boostDepletionRate);
+            updateGameUI();
+        } else if (boostAmount < 100) {
+            // Recharge boost when not using
+            boostAmount = Math.min(100, boostAmount + boostRechargeRate);
+            updateGameUI();
+        }
 
         // Update direction
         carDirection.set(Math.sin(carAngle), 0, Math.cos(carAngle)).normalize();
@@ -539,8 +817,20 @@
             car.rotation.x += (0 - car.rotation.x) * 0.1;
         }
 
+        // Check collectible collisions
+        checkCollectibleCollision();
+        
         // Respawn if car falls off
         if (carPosition.y < -30 && respawnPoint) {
+            fallCount++;
+            lives--;
+            updateGameUI();
+            
+            if (lives <= 0) {
+                showGameOver();
+                return;
+            }
+            
             carPosition.copy(respawnPoint.pos);
             carAngle = respawnPoint.angle;
             carVelocity.set(0, 0, 0);
@@ -561,9 +851,19 @@
         camera.lookAt(car.position);
     }
 
+    // Update animate function for collectibles animation
     function animate() {
         requestAnimationFrame(animate);
         if (car) updateCar();
+        
+        // Animate collectibles
+        collectibles.forEach(item => {
+            if (item.object && !item.collected) {
+                item.object.rotation.y += 0.02;
+                // Float up and down
+                item.object.position.y = item.position.y + Math.sin(Date.now() * 0.002) * 0.5;
+            }
+        });
         
         // Broadcast position at a reasonable rate (10 times per second)
         if (peer && connections.length > 0 && Date.now() % 100 < 20) {
@@ -615,25 +915,34 @@
     let playerIndices = {};      // maps peerId → numeric slot
     let nextPlayerIndex = 1;     // start with host = 1
 
-    function joinOrCreate(roomId) {
-        isHost = false;
-        // try to create peer with roomId (become host)
-        const hostPeer = new Peer(roomId);
+    function joinOrCreateRoom(blockHash) {
+        // If already connected to a peer, do nothing
+        if (peer) return;
+
+        showLoading(true, 10, "Connecting to room...");
+        const hostPeer = new Peer(blockHash);
+
         hostPeer.on('open', id => {
-            isHost = true; peer = hostPeer; playerId = id;
-            playerIndices[id] = 1;               // host = P1
-            loadBlockData(roomId);               // load & cache track
-            document.getElementById('hostOptions').style.display = 'none';
-            document.getElementById('gameCreated').style.display = 'block';
-            document.getElementById('peerId').textContent = roomId;
+            // Host: first to enter the room
+            isHost = true;
+            peer = hostPeer;
+            playerId = id;
+            playerIndices[id] = 1;
+            // Only load block data if not already loaded
+            loadBlockData(blockHash).then(() => {
+                showLoading(false, 100, "Ready!");
+            });
             peer.on('connection', handleConnection);
         });
+
         hostPeer.on('error', err => {
-            // ID taken → join as client
+            // If room exists, join as client
             peer = new Peer();
             peer.on('open', id => {
                 playerId = id;
-                const conn = peer.connect(roomId);
+                playerIndices[playerId] = nextPlayerIndex++;
+                showLoading(true, 20, "Joining existing room...");
+                const conn = peer.connect(blockHash);
                 handleConnection(conn);
             });
         });
@@ -644,27 +953,46 @@
             playerIndices[conn.peer] = nextPlayerIndex++;
         }
         connections.push(conn);
-        updatePlayerCount();
 
         conn.on('open', () => {
-            // host sends blockData once
-            if (isHost) {
-                conn.send({ type:'init', blockData:{ transactions:cachedTransactions, metadata:cachedMetadata } });
+            // Host sends blockData once to new joiner
+            if (isHost && storedTransactions.length && blockMetadata) {
+                conn.send({
+                    type: 'init',
+                    blockData: {
+                        transactions: storedTransactions,
+                        metadata: blockMetadata,
+                        blockHash: cachedBlockHash
+                    }
+                });
             }
-            // everyone shares color & ID
-            conn.send({ type:'initColor', playerColor, peerId:playerId });
+            // Everyone shares color & ID
+            conn.send({
+                type: 'playerInfo',
+                playerColor: playerColor,
+                playerId: playerId,
+                playerIndex: playerIndices[playerId]
+            });
+            showLoading(false, 100, "Connected!");
+            updatePlayersList();
         });
 
         conn.on('data', data => {
             switch(data.type) {
                 case 'init':
-                    storedTransactions = data.blockData.transactions;
-                    blockMetadata     = data.blockData.metadata;
-                    updateBlockInfo(blockMetadata);
-                    createDrivingTrack(storedTransactions);
+                    // Only load block if not already loaded
+                    if (data.blockData && (!storedTransactions.length || cachedBlockHash !== data.blockData.blockHash)) {
+                        storedTransactions = data.blockData.transactions;
+                        blockMetadata = data.blockData.metadata;
+                        cachedBlockHash = data.blockData.blockHash;
+                        updateBlockInfo(blockMetadata);
+                        createDrivingTrack(storedTransactions);
+                    }
                     break;
-                case 'initColor':
-                    createOtherPlayerCar(data.peerId, data.playerColor);
+                case 'playerInfo':
+                    createOtherPlayerCar(data.playerId, data.playerColor);
+                    playerIndices[data.playerId] = data.playerIndex || nextPlayerIndex++;
+                    updatePlayersList();
                     break;
                 case 'position':
                     updateOtherPlayerPosition(conn.peer, data);
@@ -674,13 +1002,37 @@
 
         conn.on('close', () => {
             connections = connections.filter(c => c !== conn);
-            updatePlayerCount();
             removeOtherPlayerCar(conn.peer);
+            updatePlayersList();
         });
+    }
+
+    function updateCarColor(colorHex) {
+        if (!car) return;
+        // Convert hex string to number for Three.js
+        const colorNum = parseInt(colorHex.replace('#', '0x'), 16);
+        car.material.color.set(colorNum);
     }
 
     function updatePlayerCount() {
         document.getElementById('playerCount').textContent = connections.length;
+    }
+
+    function handlePeerMessage(peerId, data) {
+        switch(data.type) {
+            case 'init':
+                // If we join and host sends block data, load that block
+                if(data.blockHash) {
+                    document.getElementById('blockHash').value = data.blockHash;
+                    loadBlockData(data.blockHash);
+                }
+                createOtherPlayerCar(peerId, data.playerColor || '#ff0000');
+                break;
+                
+            case 'position':
+                updateOtherPlayerPosition(peerId, data);
+                break;
+        }
     }
 
     function createOtherPlayerCar(peerId, colorHex) {
@@ -965,17 +1317,32 @@
         }
     }
     
+    // Add event listeners
+    function addGameEventListeners() {
+        document.getElementById('restartGame').addEventListener('click', restartGame);
+        
+        // Prevent scrolling
+        window.addEventListener('keydown', e => {
+            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft'].includes(e.code)) {
+                e.preventDefault();
+            }
+            keys[e.code] = true;
+        });
+    }
+
     // --- UI and Startup ---
     document.getElementById('blockForm').onsubmit = function(e) {
         e.preventDefault();
-        const roomId = document.getElementById('blockHash').value.trim();
-        if (!roomId) return;
-        joinOrCreate(roomId);
+        const blockHash = document.getElementById('blockHash').value.trim();
+        if (!blockHash) return;
+        joinOrCreateRoom(blockHash);
     };
 
     window.onload = function() {
         initThreeJS();
         animate();
+        updateGameUI();
+        addGameEventListeners();
     };
     </script>
 </body>
