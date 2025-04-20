@@ -200,6 +200,9 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+    let cachedTransactions = null;
+    let cachedMetadata     = null;
+
     // --- Minimal Block Data Fetch ---
     let storedTransactions = [];
     let blockMetadata = null;
@@ -223,6 +226,8 @@
             updateBlockInfo(blockMetadata);
             createDrivingTrack(storedTransactions);
             showLoading(false, 100, "Done");
+            cachedTransactions = storedTransactions;
+            cachedMetadata     = blockMetadata;
         } catch (e) {
             showLoading(true, 100, "Error: " + e.message);
             setTimeout(()=>showLoading(false), 1200);
@@ -417,6 +422,11 @@
                 smoothSegments[0].p2.z - smoothSegments[0].p1.z
             )
         };
+
+        // Re-add other players' meshes so they persist
+        Object.values(otherPlayers).forEach(p => {
+            scene.add(p.mesh);
+        });
     }
 
     function createCar(startPos, startAngle) {
@@ -433,8 +443,8 @@
         car.rotation.y = startAngle || 0;
         
         // Add self label
-        const selfLabel = createPlayerLabel("YOU");
-        car.add(selfLabel);
+        const label = createPlayerLabel('P' + playerIndices[playerId]);
+        car.add(label);
         
         scene.add(car);
         carSpeed = 0;
@@ -560,10 +570,17 @@
             broadcastPosition();
         }
         
+        // Smooth update for each other player
+        Object.values(otherPlayers).forEach(p => {
+            p.mesh.position.lerp(p.position, 0.2);
+            p.mesh.rotation.y = p.angle;
+        });
+        
         // Remove stale players (disconnected but not caught by close event)
         const now = Date.now();
         Object.keys(otherPlayers).forEach(id => {
-            if (now - otherPlayers[id].lastUpdate > 5000) {
+            // Increase timeout to 20 seconds for better persistence
+            if (now - otherPlayers[id].lastUpdate > 20000) {
                 removeOtherPlayerCar(id);
             }
         });
@@ -595,90 +612,66 @@
     let playerColor = '#' + Math.floor(Math.random()*16777215).toString(16);
     let otherPlayers = {}; // {peerId: {mesh, position, angle, lastUpdate}}
     let playerId = null;
+    let playerIndices = {};      // maps peerId → numeric slot
+    let nextPlayerIndex = 1;     // start with host = 1
 
-    function initMultiplayer() {
-        document.getElementById('createGame').addEventListener('click', createGame);
-        document.getElementById('joinGame').addEventListener('click', joinGame);
-    }
-
-    function createGame() {
-        isHost = true;
-        peer = new Peer();
-        
-        peer.on('open', id => {
-            playerId = id;
+    function joinOrCreate(roomId) {
+        isHost = false;
+        // try to create peer with roomId (become host)
+        const hostPeer = new Peer(roomId);
+        hostPeer.on('open', id => {
+            isHost = true; peer = hostPeer; playerId = id;
+            playerIndices[id] = 1;               // host = P1
+            loadBlockData(roomId);               // load & cache track
+            document.getElementById('hostOptions').style.display = 'none';
             document.getElementById('gameCreated').style.display = 'block';
-            document.getElementById('peerId').textContent = id;
-            document.getElementById('joinOptions').style.display = 'none';
-            document.getElementById('connectionStatus').textContent = 'Game created!';
-            
-            // Update car color to match player color
-            updateCarColor(playerColor);
-            
-            // Handle incoming connections
-            peer.on('connection', conn => {
+            document.getElementById('peerId').textContent = roomId;
+            peer.on('connection', handleConnection);
+        });
+        hostPeer.on('error', err => {
+            // ID taken → join as client
+            peer = new Peer();
+            peer.on('open', id => {
+                playerId = id;
+                const conn = peer.connect(roomId);
                 handleConnection(conn);
             });
         });
-        
-        peer.on('error', err => {
-            document.getElementById('connectionStatus').textContent = 'Error: ' + err.message;
-        });
-    }
-
-    function joinGame() {
-        const hostId = document.getElementById('joinGameId').value.trim();
-        if (!hostId) {
-            document.getElementById('connectionStatus').textContent = 'Please enter a game ID';
-            return;
-        }
-        
-        peer = new Peer();
-        
-        peer.on('open', id => {
-            playerId = id;
-            // Update car color to match player color
-            updateCarColor(playerColor);
-            
-            const conn = peer.connect(hostId);
-            handleConnection(conn);
-            document.getElementById('connectionStatus').textContent = 'Connecting to game...';
-            document.getElementById('hostOptions').style.display = 'none';
-        });
-        
-        peer.on('error', err => {
-            document.getElementById('connectionStatus').textContent = 'Error: ' + err.message;
-        });
-    }
-
-    function updateCarColor(colorHex) {
-        if (!car) return;
-        // Convert hex string to number for Three.js
-        const colorNum = parseInt(colorHex.replace('#', '0x'), 16);
-        car.material.color.set(colorNum);
     }
 
     function handleConnection(conn) {
+        if (!playerIndices[conn.peer]) {
+            playerIndices[conn.peer] = nextPlayerIndex++;
+        }
         connections.push(conn);
         updatePlayerCount();
-        
+
         conn.on('open', () => {
-            document.getElementById('connectionStatus').textContent = 
-                isHost ? 'Player connected!' : 'Connected to game!';
-            
-            // Send initial data (current block and player info)
-            conn.send({
-                type: 'init',
-                blockHash: document.getElementById('blockHash').value,
-                playerId: playerId,
-                playerColor: playerColor
-            });
+            // host sends blockData once
+            if (isHost) {
+                conn.send({ type:'init', blockData:{ transactions:cachedTransactions, metadata:cachedMetadata } });
+            }
+            // everyone shares color & ID
+            conn.send({ type:'initColor', playerColor, peerId:playerId });
         });
-        
+
         conn.on('data', data => {
-            handlePeerMessage(conn.peer, data);
+            switch(data.type) {
+                case 'init':
+                    storedTransactions = data.blockData.transactions;
+                    blockMetadata     = data.blockData.metadata;
+                    updateBlockInfo(blockMetadata);
+                    createDrivingTrack(storedTransactions);
+                    break;
+                case 'initColor':
+                    createOtherPlayerCar(data.peerId, data.playerColor);
+                    break;
+                case 'position':
+                    updateOtherPlayerPosition(conn.peer, data);
+                    break;
+            }
         });
-        
+
         conn.on('close', () => {
             connections = connections.filter(c => c !== conn);
             updatePlayerCount();
@@ -688,23 +681,6 @@
 
     function updatePlayerCount() {
         document.getElementById('playerCount').textContent = connections.length;
-    }
-
-    function handlePeerMessage(peerId, data) {
-        switch(data.type) {
-            case 'init':
-                // If we join and host sends block data, load that block
-                if(data.blockHash) {
-                    document.getElementById('blockHash').value = data.blockHash;
-                    loadBlockData(data.blockHash);
-                }
-                createOtherPlayerCar(peerId, data.playerColor || '#ff0000');
-                break;
-                
-            case 'position':
-                updateOtherPlayerPosition(peerId, data);
-                break;
-        }
     }
 
     function createOtherPlayerCar(peerId, colorHex) {
@@ -721,7 +697,8 @@
         scene.add(playerCar);
         
         // Add visible identifier with larger text
-        const playerLabel = createPlayerLabel("P" + Object.keys(otherPlayers).length + 1);
+        const idx = playerIndices[peerId] || ('?' );
+        const playerLabel = createPlayerLabel('P' + idx);
         playerLabel.position.set(0, 4, 0); // Position higher above car
         playerLabel.scale.set(4, 2, 1);    // Make it larger
         playerCar.add(playerLabel);
@@ -792,29 +769,13 @@
     }
     
     function updateOtherPlayerPosition(peerId, data) {
-        if (!otherPlayers[peerId]) {
-            createOtherPlayerCar(peerId, data.color || '#ff0000');
-            return;
-        }
-        
-        const player = otherPlayers[peerId];
-        player.position.set(data.x, data.y, data.z);
-        player.angle = data.angle;
-        player.lastUpdate = Date.now();
-        
-        // Apply mild interpolation for smoother movement
-        player.mesh.position.lerp(player.position, 0.5);
-        player.mesh.rotation.y = player.angle;
-        
-        // Pulse the highlight to make the car more visible
-        const pulse = (Math.sin(Date.now() * 0.005) + 1) * 0.5 * 0.3 + 0.1;
-        if (player.highlight) player.highlight.material.opacity = pulse;
-        
-        // Update minimap
-        updateMinimapMarkers();
+        if (!otherPlayers[peerId]) createOtherPlayerCar(peerId, data.color);
+        const p = otherPlayers[peerId];
+        p.position.set(data.x, data.y, data.z);
+        p.angle = data.angle;
+        p.lastUpdate = Date.now();
     }
-
-    // Add the missing broadcastPosition function
+    
     function broadcastPosition() {
         if (!peer || !carPosition) return;
         
@@ -834,7 +795,6 @@
         });
     }
     
-    // Add the missing updatePlayersList function
     function updatePlayersList() {
         const list = document.getElementById('playersList');
         list.innerHTML = '<p><strong>Players:</strong></p>';
@@ -1008,14 +968,13 @@
     // --- UI and Startup ---
     document.getElementById('blockForm').onsubmit = function(e) {
         e.preventDefault();
-        const blockHash = document.getElementById('blockHash').value;
-        loadBlockData(blockHash);
+        const roomId = document.getElementById('blockHash').value.trim();
+        if (!roomId) return;
+        joinOrCreate(roomId);
     };
 
     window.onload = function() {
         initThreeJS();
-        loadBlockData(document.getElementById('blockHash').value);
-        initMultiplayer();
         animate();
     };
     </script>
