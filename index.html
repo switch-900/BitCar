@@ -93,42 +93,6 @@
             z-index: 10;
             pointer-events: none;
         }
-        #multiplayer {
-            position: absolute;
-            top: 48px;
-            right: 16px;
-            background: rgba(24,24,24,0.85);
-            color: #ffa94d;
-            padding: 10px;
-            border-radius: 8px;
-            z-index: 10;
-            width: 220px;
-            text-align: center;
-        }
-        #multiplayer button {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            background: #ffa94d;
-            color: #181818;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 0.9em;
-        }
-        #peerId {
-            font-size: 0.9em;
-            word-break: break-all;
-            background: #333;
-            padding: 4px;
-            border-radius: 2px;
-            margin: 5px 0;
-        }
-        #playersList {
-            font-size: 0.9em;
-            text-align: left;
-            margin-top: 5px;
-        }
         #minimap {
             position: absolute;
             bottom: 16px;
@@ -237,6 +201,281 @@
             from { transform: scale(1); }
             to { transform: scale(1.2); }
         }
+        #raceControls {
+            position: absolute;
+            top: 48px;
+            right: 16px;
+            background: rgba(24,24,24,0.85);
+            color: #ffa94d;
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 10;
+            width: 220px;
+            text-align: center;
+        }
+        #raceControls button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            background: #ffa94d;
+            color: #181818;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 1em;
+        }
+        #countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8em;
+            color: #ffa94d;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 169, 77, 0.8);
+            z-index: 50;
+            display: none;
+        }
+        .startLine, .finishLine {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: repeating-linear-gradient(
+                90deg,
+                #fff,
+                #fff 20px,
+                #000 20px,
+                #000 40px
+            );
+            z-index: 5;
+        }
+        .startLine {
+            background: repeating-linear-gradient(
+                90deg,
+                #fff,
+                #fff 20px,
+                #00ff00 20px,
+                #00ff00 40px
+            );
+        }
+        .finishLine {
+            background: repeating-linear-gradient(
+                90deg,
+                #fff,
+                #fff 20px,
+                #ff0000 20px,
+                #ff0000 40px
+            );
+        }
+        #nameInputContainer {
+            position: fixed;
+            top: 16px;
+            right: 50%;
+            transform: translateX(50%);
+            background: rgba(24,24,24,0.85);
+            color: #ffa94d;
+            padding: 8px 18px;
+            border-radius: 8px;
+            z-index: 15;
+            text-align: center;
+        }
+        
+        #playerName {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #ffa94d;
+            background: #333;
+            color: #fff;
+            font-size: 1em;
+            text-align: center;
+            width: 150px;
+        }
+        
+        .dangerIndicator {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff0000;
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            animation: pulse 0.5s infinite alternate;
+            z-index: 20;
+            display: none;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        #jumpIndicator {
+            position: absolute;
+            bottom: 60px;
+            left: 16px;
+            background: rgba(24,24,24,0.85);
+            color: #00aaff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+        
+        #jumpIndicator.cooldown {
+            color: #777;
+        }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            width: 100%;
+            display: none;  /* Hidden by default, shown on mobile */
+            z-index: 20;
+        }
+        
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 169, 77, 0.7);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            user-select: none;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+        
+        .control-button.active {
+            background: rgba(255, 169, 77, 1);
+            transform: scale(0.95);
+        }
+        
+        #directionalPad {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px 60px;
+            gap: 5px;
+        }
+        
+        #actionButtons {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .action-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .button-up { grid-column: 2; grid-row: 1; }
+        .button-left { grid-column: 1; grid-row: 2; }
+        .button-right { grid-column: 3; grid-row: 2; }
+        .button-down { grid-column: 2; grid-row: 3; }
+        
+        /* Shooting related styles */
+        .laser-beam {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255,0,0,0) 0%, rgba(255,0,0,1) 50%, rgba(255,0,0,0) 100%);
+            transform-origin: center left;
+            z-index: 5;
+        }
+        
+        .hit-effect {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0) 70%);
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        #scorePopup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffcc00;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+            z-index: 30;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.7s;
+        }
+        
+        #updateNameButton {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #ffa94d;
+            background: #333;
+            color: #fff;
+            font-size: 1em;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        #nameUpdateSuccess {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,255,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.5s, top 0.5s;
+        }
+        
+        /* Cooldown indicator for shooting */
+        #shootCooldown {
+            position: absolute;
+            bottom: 60px;
+            right: 16px;
+            background: rgba(24,24,24,0.85);
+            color: #ff3333;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+        
+        #shootCooldown.ready {
+            color: #33ff33;
+        }
+        
+        /* Enhanced collectibles */
+        .collectible-target {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            margin-left: -20px;
+            margin-top: -20px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 204, 0, 0.7);
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -249,29 +488,11 @@
         <span id="blockInfo">Block: <span id="blockHeight">-</span> | TX: <span id="txCount">-</span> | BTC: <span id="totalBtc">-</span> | <span id="blockTime">-</span></span>
     </div>
     <div id="instructions">
-        <b>Arrow keys</b> to drive. <b>Shift</b> to boost. <b>Load a block</b> to generate a new track!
+        <b>Arrow keys</b> to drive. <b>Space</b> to jump. <b>Shift</b> to boost. <b>D</b> to drift. <b>Load a block</b> to generate a new track!
     </div>
     <div id="loadingOverlay" style="display:none;">
         <div id="loadingText">Loading block data...</div>
         <div id="loadingBar"><div id="loadingBarProgress"></div></div>
-    </div>
-    <div id="multiplayer">
-        <h3 style="margin-top:0">Multiplayer</h3>
-        <div id="hostOptions">
-            <button id="createGame">Create Game</button>
-            <div id="gameCreated" style="display:none">
-                <p>Share this game ID:</p>
-                <div id="peerId"></div>
-                <p>Connected players: <span id="playerCount">0</span></p>
-            </div>
-        </div>
-        <div id="joinOptions">
-            <p>- OR -</p>
-            <input type="text" id="joinGameId" placeholder="Paste game ID">
-            <button id="joinGame">Join Game</button>
-        </div>
-        <div id="connectionStatus"></div>
-        <div id="playersList"></div>
     </div>
     <div id="minimap"></div>
     <div id="gameUI">
@@ -284,6 +505,21 @@
         <div class="final-score">Score: 0</div>
         <button id="restartGame">Try Again</button>
     </div>
+    <div id="raceControls" style="display: none;">
+        <h3 style="margin-top:0">Race Controls</h3>
+        <button id="startRaceButton">Start Race</button>
+        <div id="connectedPlayers">
+            <p>Connected players: <span id="playerCount">0</span></p>
+        </div>
+        <div id="playersList" style="max-height: 150px; overflow-y: auto; margin-top: 10px; text-align: left; font-size: 0.9em;"></div>
+    </div>
+    <div id="countdown"></div>
+    <div id="nameInputContainer">
+        <label for="playerName">Your Name: </label>
+        <input type="text" id="playerName" maxlength="15" placeholder="Enter name">
+    </div>
+    <div id="dangerIndicator" class="dangerIndicator">⚠️ DANGER!</div>
+    <div id="jumpIndicator">Jump Ready</div>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -291,6 +527,10 @@
     let storedTransactions = [];
     let blockMetadata = null;
     let cachedBlockHash = null; // cache the loaded block hash
+    let controlsLocked = false; // For race start countdown, prevents movement
+    let playerName = "Player";
+    let enemies = [];
+    let enemySpawnInterval = null;
 
     async function loadBlockData(blockHash) {
         // Only fetch and reload if not already loaded
@@ -315,11 +555,67 @@
             showLoading(true, 60, "Generating track...");
             updateBlockInfo(blockMetadata);
             createDrivingTrack(storedTransactions);
+            if (respawnPoint) {
+                carPosition.copy(respawnPoint.pos);
+                carAngle = respawnPoint.angle;
+                carVelocity.set(0, 0, 0);
+                carSpeed = 0;
+                raceFinished = false;
+                finishLinePassed = false;
+            }
             showLoading(false, 100, "Done");
             cachedBlockHash = blockHash;
         } catch (e) {
             showLoading(true, 100, "Error: " + e.message);
             setTimeout(()=>showLoading(false), 1200);
+        }
+    }
+
+    async function fetchLatestBlockInfo() {
+        showLoading(true, 0, "Fetching latest block info...");
+        try {
+            // Try multiple API sources with a CORS proxy
+            const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+            let response;
+            
+            try {
+                // First try with mempool.space API which is more CORS friendly
+                response = await fetch('https://mempool.space/api/blocks/tip/height');
+                if (response.ok) {
+                    const blockHeight = await response.text();
+                    document.getElementById('blockHash').value = blockHeight;
+                    showLoading(false);
+                    return blockHeight;
+                }
+            } catch (err) {
+                console.log("Mempool API failed, trying alternative...");
+            }
+            
+            try {
+                // Try with cors-anywhere proxy as fallback
+                response = await fetch(corsProxy + 'https://blockchain.info/latestblock');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('blockHash').value = data.hash || data.height;
+                    showLoading(false);
+                    return data.hash || data.height;
+                }
+            } catch (err) {
+                console.log("Proxy API attempt failed...");
+            }
+            
+            // If all fail, use a fallback block
+            const fallbackBlock = '783000'; // A recent block height that works
+            console.log("Using fallback block:", fallbackBlock);
+            document.getElementById('blockHash').value = fallbackBlock;
+            showLoading(false);
+            return fallbackBlock;
+        } catch (e) {
+            console.error("Error fetching latest block:", e);
+            const fallbackBlock = '783000';
+            document.getElementById('blockHash').value = fallbackBlock;
+            showLoading(false);
+            return fallbackBlock;
         }
     }
 
@@ -375,6 +671,21 @@
     let boostDepletionRate = 1;
     let collectibles = [];
     let collectibleCount = 0;
+
+    // Race management variables
+    let raceActive = false;
+    let raceFinished = false;
+    let raceStartTime = 0;
+    let startLineObj = null;
+    let finishLineObj = null;
+    let finishLinePassed = false;
+    let raceTimes = {}; // Store player finish times
+
+    // Special abilities
+    let canJump = true;
+    let jumpCooldown = 1500; // milliseconds
+    let boostStrength = 1.0;  // Multiplier for boost
+    let driftFactor = 0.0;   // For drift mode (0 = no drift)
 
     // Helper for smooth track connection (Catmull-Rom spline)
     function smoothTrackPoints(points) {
@@ -538,6 +849,14 @@
 
         // Spawn collectibles on the new track
         spawnCollectibles();
+
+        // Create start and finish lines
+        createStartAndFinishLines(trackSegments);
+
+        // Reset race state
+        raceActive = false;
+        raceFinished = false;
+        finishLinePassed = false;
     }
 
     function createCar(startPos, startAngle) {
@@ -554,7 +873,7 @@
         car.rotation.y = startAngle || 0;
         
         // Add self label
-        const label = createPlayerLabel('P' + playerIndices[playerId]);
+        const label = createPlayerLabel('P' + playerIndices[playerId], playerName);
         car.add(label);
         
         scene.add(car);
@@ -568,8 +887,18 @@
         initMinimap();
     }
 
-    window.addEventListener('keydown', e => { keys[e.code] = true; });
-    window.addEventListener('keyup', e => { keys[e.code] = false; });
+    window.addEventListener('keydown', e => { 
+        keys[e.code] = true;
+        
+        // Prevent scrolling and other browser defaults
+        if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'Space', 'KeyD'].includes(e.code)) {
+            e.preventDefault();
+        }
+    });
+    
+    window.addEventListener('keyup', e => { 
+        keys[e.code] = false;
+    });
 
     function updateGameUI() {
         // Update lives display
@@ -648,12 +977,10 @@
             const geometry = new THREE.SphereGeometry(1, 8, 8);
             const material = new THREE.MeshBasicMaterial({
                 color: 0xffcc00,
-                emissive: 0xffaa00,
                 transparent: true,
                 opacity: 0.8
             });
             const sphere = new THREE.Mesh(geometry, material);
-            sphere.position.copy(pos);
             
             // Add glow effect
             const glowGeo = new THREE.SphereGeometry(1.5, 8, 8);
@@ -725,25 +1052,77 @@
         });
     }
 
-    // Modified updateCar function with boost and lives
     function updateCar() {
         if (gameOver) return;
         
-        // Car controls (arcade style)
-        if (keys['ArrowUp']) carSpeed = Math.min(carSpeed + 0.08, carMaxSpeed);
-        else carSpeed = Math.max(carSpeed - 0.04, 0);
-        if (keys['ArrowLeft']) carAngle += 0.045 * (carSpeed / carMaxSpeed + 0.5);
-        if (keys['ArrowRight']) carAngle -= 0.045 * (carSpeed / carMaxSpeed + 0.5);
+        // Only allow controls when not locked
+        if (!controlsLocked) {
+            // Car controls (arcade style)
+            if (keys['ArrowUp']) carSpeed = Math.min(carSpeed + 0.08, carMaxSpeed);
+            else carSpeed = Math.max(carSpeed - 0.04, 0);
+            if (keys['ArrowLeft']) carAngle += (0.045 + driftFactor) * (carSpeed / carMaxSpeed + 0.5);
+            if (keys['ArrowRight']) carAngle -= (0.045 + driftFactor) * (carSpeed / carMaxSpeed + 0.5);
 
-        // Boost control
-        if (keys['ShiftLeft'] && boostAmount > 0) {
-            carSpeed = Math.min(carSpeed + 0.15, carMaxSpeed * 1.5);
-            boostAmount = Math.max(0, boostAmount - boostDepletionRate);
-            updateGameUI();
-        } else if (boostAmount < 100) {
-            // Recharge boost when not using
-            boostAmount = Math.min(100, boostAmount + boostRechargeRate);
-            updateGameUI();
+            // Jump control - Space bar
+            if (keys['Space'] && canJump && carOnGround) {
+                carVelocity.y = 6; // Jump power
+                carOnGround = false;
+                canJump = false;
+                
+                // Visual feedback for jump
+                const jumpFeedback = document.createElement('div');
+                jumpFeedback.textContent = 'JUMP!';
+                jumpFeedback.style.position = 'absolute';
+                jumpFeedback.style.top = '40%';
+                jumpFeedback.style.left = '50%';
+                jumpFeedback.style.transform = 'translate(-50%, -50%)';
+                jumpFeedback.style.color = '#00aaff';
+                jumpFeedback.style.fontSize = '2em';
+                jumpFeedback.style.fontWeight = 'bold';
+                jumpFeedback.style.zIndex = '15';
+                document.body.appendChild(jumpFeedback);
+                
+                setTimeout(() => {
+                    document.body.removeChild(jumpFeedback);
+                    // Reset jump cooldown
+                    setTimeout(() => { canJump = true; }, jumpCooldown);
+                }, 500);
+            }
+
+            // Boost control with enhanced strength
+            if (keys['ShiftLeft'] && boostAmount > 0) {
+                carSpeed = Math.min(carSpeed + 0.15 * boostStrength, carMaxSpeed * 1.5 * boostStrength);
+                boostAmount = Math.max(0, boostAmount - boostDepletionRate);
+                updateGameUI();
+            } else if (boostAmount < 100) {
+                // Recharge boost when not using
+                boostAmount = Math.min(100, boostAmount + boostRechargeRate);
+                updateGameUI();
+            }
+            
+            // Drift mode toggle with 'D' key
+            if (keys['KeyD'] && !keys.KeyD_previous) {
+                driftFactor = driftFactor > 0 ? 0 : 0.03;
+                const driftMsg = document.createElement('div');
+                driftMsg.textContent = driftFactor > 0 ? 'DRIFT MODE: ON' : 'DRIFT MODE: OFF';
+                driftMsg.style.position = 'absolute';
+                driftMsg.style.bottom = '120px';
+                driftMsg.style.left = '50%';
+                driftMsg.style.transform = 'translateX(-50%)';
+                driftMsg.style.color = '#ff00ff';
+                driftMsg.style.fontSize = '1.5em';
+                driftMsg.style.fontWeight = 'bold';
+                driftMsg.style.zIndex = '15';
+                driftMsg.style.background = 'rgba(0,0,0,0.5)';
+                driftMsg.style.padding = '5px 15px';
+                driftMsg.style.borderRadius = '10px';
+                document.body.appendChild(driftMsg);
+                setTimeout(() => document.body.removeChild(driftMsg), 1500);
+            }
+            keys.KeyD_previous = keys['KeyD'];
+        } else {
+            // When controls are locked, slow down
+            carSpeed = Math.max(carSpeed - 0.08, 0);
         }
 
         // Update direction
@@ -779,7 +1158,10 @@
             if (distXZ < seg.width / 2 + 1) {
                 let yOnTrack = closest.y + 1.5;
                 let yDiff = carPosition.y - yOnTrack;
-                if (yDiff < 2 && yDiff > -2 && Math.abs(yDiff) < minDist) {
+                
+                // Modified condition to prevent falling through track when landing
+                // Check if car is above track and moving downward
+                if (yDiff > -2 && Math.abs(yDiff) < minDist) {
                     minDist = Math.abs(yDiff);
                     groundY = yOnTrack;
                     groundNormal = new THREE.Vector3(
@@ -793,14 +1175,22 @@
                 }
             }
         }
+        
         // If on ground, smoothly transition car's y and tilt to match track
-        if (groundY !== null && carPosition.y <= groundY + 1.5) {
-            carPosition.y += (groundY - carPosition.y) * 0.5;
-            carVelocity.y = 0;
+        if (groundY !== null && (carPosition.y <= groundY + 0.5 || (carPosition.y <= groundY + 3 && carVelocity.y < 0))) {
+            // Stop downward movement if we're landing
+            if (carVelocity.y < 0) {
+                carPosition.y = groundY;
+                carVelocity.y = 0;
+            } else {
+                // Normal ground following behavior
+                carPosition.y += (groundY - carPosition.y) * 0.5;
+            }
             carOnGround = true;
             carVelocity.x *= groundFriction;
             carVelocity.z *= groundFriction;
             car.rotation.x += (groundAngle - car.rotation.x) * 0.2;
+            
             // Update respawn point to last valid position on track
             if (closestSegIdx >= 0) {
                 let seg = trackSegments[closestSegIdx];
@@ -819,6 +1209,11 @@
 
         // Check collectible collisions
         checkCollectibleCollision();
+        
+        // Check finish line
+        if (raceActive && !raceFinished) {
+            checkFinishLine();
+        }
         
         // Respawn if car falls off
         if (carPosition.y < -30 && respawnPoint) {
@@ -855,6 +1250,9 @@
     function animate() {
         requestAnimationFrame(animate);
         if (car) updateCar();
+        
+        // Update enemies
+        updateEnemies();
         
         // Animate collectibles
         collectibles.forEach(item => {
@@ -916,9 +1314,30 @@
     let nextPlayerIndex = 1;     // start with host = 1
 
     function joinOrCreateRoom(blockHash) {
-        // If already connected to a peer, do nothing
-        if (peer) return;
+        // Get player name from input
+        playerName = document.getElementById('playerName').value.trim();
+        if (!playerName) playerName = "Player" + Math.floor(Math.random() * 1000);
 
+        // If already connected to a peer with the same block, do nothing
+        if (peer && cachedBlockHash === blockHash) {
+            console.log("Already connected with this block");
+            return;
+        }
+        
+        // If connected to a different block, disconnect first
+        if (peer) {
+            console.log("Disconnecting from previous room");
+            connections.forEach(conn => {
+                if (conn.open) conn.close();
+            });
+            connections = [];
+            peer.disconnect();
+            peer.destroy();
+            peer = null;
+            isHost = false;
+        }
+
+        // Now connect to new room
         showLoading(true, 10, "Connecting to room...");
         const hostPeer = new Peer(blockHash);
 
@@ -933,6 +1352,9 @@
                 showLoading(false, 100, "Ready!");
             });
             peer.on('connection', handleConnection);
+
+            // Show race controls for host
+            document.getElementById('raceControls').style.display = 'block';
         });
 
         hostPeer.on('error', err => {
@@ -946,6 +1368,9 @@
                 handleConnection(conn);
             });
         });
+
+        // Add race control event listeners
+        document.getElementById('startRaceButton').addEventListener('click', startRace);
     }
 
     function handleConnection(conn) {
@@ -971,7 +1396,8 @@
                 type: 'playerInfo',
                 playerColor: playerColor,
                 playerId: playerId,
-                playerIndex: playerIndices[playerId]
+                playerIndex: playerIndices[playerId],
+                playerName: playerName
             });
             showLoading(false, 100, "Connected!");
             updatePlayersList();
@@ -990,12 +1416,73 @@
                     }
                     break;
                 case 'playerInfo':
-                    createOtherPlayerCar(data.playerId, data.playerColor);
+                    createOtherPlayerCar(data.playerId, data.playerColor, data.playerName);
                     playerIndices[data.playerId] = data.playerIndex || nextPlayerIndex++;
                     updatePlayersList();
                     break;
                 case 'position':
                     updateOtherPlayerPosition(conn.peer, data);
+                    break;
+                case 'resetToStart':
+                    if (respawnPoint) {
+                        carPosition.copy(respawnPoint.pos);
+                        carAngle = respawnPoint.angle;
+                        carVelocity.set(0, 0, 0);
+                        carSpeed = 0;
+                        raceFinished = false;
+                        finishLinePassed = false;
+                    }
+                    break;
+                case 'startRaceCountdown':
+                    startRaceCountdown();
+                    break;
+                case 'playerFinished':
+                    // Record other player's finish time
+                    raceTimes[data.playerId] = data.time;
+                    // Show notification
+                    const pIndex = playerIndices[data.playerId] || '?';
+                    const minutes = Math.floor(data.time / 60000);
+                    const seconds = Math.floor((data.time % 60000) / 1000);
+                    const ms = data.time % 1000;
+                    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+                    const notification = document.createElement('div');
+                    notification.textContent = `Player ${pIndex} finished in ${timeStr}!`;
+                    notification.style.position = 'absolute';
+                    notification.style.bottom = '100px';
+                    notification.style.left = '50%';
+                    notification.style.transform = 'translateX(-50%)';
+                    notification.style.color = '#ffa94d';
+                    notification.style.background = 'rgba(0,0,0,0.7)';
+                    notification.style.padding = '8px 16px';
+                    notification.style.borderRadius = '4px';
+                    notification.style.zIndex = '15';
+                    document.body.appendChild(notification);
+                    setTimeout(() => document.body.removeChild(notification), 5000);
+                    break;
+                case 'forceResetToStart':
+                    // Force reset the player position to start using exact coordinates
+                    if (data.startPos) {
+                        carPosition.set(data.startPos.x, data.startPos.y, data.startPos.z);
+                        carAngle = data.startPos.angle;
+                        carVelocity.set(0, 0, 0);
+                        carSpeed = 0;
+                        raceFinished = false;
+                        finishLinePassed = false;
+                        
+                        // Update respawn point too
+                        respawnPoint = {
+                            pos: new THREE.Vector3(data.startPos.x, data.startPos.y, data.startPos.z),
+                            angle: data.startPos.angle
+                        };
+                    } else if (respawnPoint) {
+                        // Fallback to local respawnPoint if no position data provided
+                        carPosition.copy(respawnPoint.pos);
+                        carAngle = respawnPoint.angle;
+                        carVelocity.set(0, 0, 0);
+                        carSpeed = 0;
+                        raceFinished = false;
+                        finishLinePassed = false;
+                    }
                     break;
             }
         });
@@ -1026,7 +1513,7 @@
                     document.getElementById('blockHash').value = data.blockHash;
                     loadBlockData(data.blockHash);
                 }
-                createOtherPlayerCar(peerId, data.playerColor || '#ff0000');
+                createOtherPlayerCar(peerId, data.playerColor || '#ff0000', data.playerName);
                 break;
                 
             case 'position':
@@ -1035,7 +1522,7 @@
         }
     }
 
-    function createOtherPlayerCar(peerId, colorHex) {
+    function createOtherPlayerCar(peerId, colorHex, playerName) {
         if (otherPlayers[peerId]) removeOtherPlayerCar(peerId);
         
         let geometry = new THREE.BoxGeometry(3, 2, 5);
@@ -1043,19 +1530,20 @@
         const colorNum = parseInt(colorHex.replace('#', '0x'), 16);
         let material = new THREE.MeshPhongMaterial({ 
             color: colorNum,
-            emissive: new THREE.Color(colorNum).multiplyScalar(0.3) // Make it glow slightly
+            emissive: new THREE.Color(colorNum).multiplyScalar(0.3) // Keep emissive for MeshPhongMaterial
         });
         let playerCar = new THREE.Mesh(geometry, material);
         scene.add(playerCar);
         
-        // Add visible identifier with larger text
+        // Add visible identifier with larger text and name
         const idx = playerIndices[peerId] || ('?' );
-        const playerLabel = createPlayerLabel('P' + idx);
+        const displayName = playerName || ('P' + idx);
+        const playerLabel = createPlayerLabel('P' + idx, displayName);
         playerLabel.position.set(0, 4, 0); // Position higher above car
         playerLabel.scale.set(4, 2, 1);    // Make it larger
         playerCar.add(playerLabel);
         
-        // Add highlighting effect to make other cars more visible
+        // Add highlighting effect with corrected material (no emissive)
         const highlightGeo = new THREE.BoxGeometry(3.5, 2.5, 5.5);
         const highlightMat = new THREE.MeshBasicMaterial({
             color: colorNum,
@@ -1084,7 +1572,7 @@
     }
     
     // Create a floating label above player cars
-    function createPlayerLabel(text) {
+    function createPlayerLabel(text, playerName) {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.width = 128;
@@ -1099,12 +1587,15 @@
         context.lineWidth = 2;
         context.strokeRect(2, 2, canvas.width-4, canvas.height-4);
         
+        // Use provided name or default to numeric ID
+        const displayText = playerName ? playerName : text;
+        
         // Draw text - larger and bold
         context.font = 'bold 28px Arial';
         context.fillStyle = '#ffffff';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(text, canvas.width/2, canvas.height/2);
+        context.fillText(displayText, canvas.width/2, canvas.height/2);
         
         // Create sprite
         const texture = new THREE.CanvasTexture(canvas);
@@ -1121,7 +1612,7 @@
     }
     
     function updateOtherPlayerPosition(peerId, data) {
-        if (!otherPlayers[peerId]) createOtherPlayerCar(peerId, data.color);
+        if (!otherPlayers[peerId]) createOtherPlayerCar(peerId, data.color, data.playerName);
         const p = otherPlayers[peerId];
         p.position.set(data.x, data.y, data.z);
         p.angle = data.angle;
@@ -1149,6 +1640,8 @@
     
     function updatePlayersList() {
         const list = document.getElementById('playersList');
+        if (!list) return; // Add safety check
+        
         list.innerHTML = '<p><strong>Players:</strong></p>';
         
         // Add yourself
@@ -1317,6 +1810,460 @@
         }
     }
     
+    function createStartAndFinishLines(track) {
+        // Remove previous lines if they exist
+        if (startLineObj && startLineObj.parent) startLineObj.parent.remove(startLineObj);
+        if (finishLineObj && finishLineObj.parent) finishLineObj.parent.remove(finishLineObj);
+        
+        if (!track || !track.length) return;
+        
+        // Create start line at first track segment
+        const startSeg = track[0];
+        const startLineGeo = new THREE.PlaneGeometry(startSeg.width * 1.2, 3);
+        const startLineMat = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        startLineObj = new THREE.Mesh(startLineGeo, startLineMat);
+        
+        // Position at the beginning of track
+        startLineObj.position.copy(startSeg.p1);
+        startLineObj.position.y += 0.2; // Slightly above track
+        
+        // Determine rotation
+        const startDir = new THREE.Vector3().subVectors(startSeg.p2, startSeg.p1).normalize();
+        startLineObj.rotation.y = Math.atan2(startDir.x, startDir.z) + Math.PI/2;
+        startLineObj.rotation.x = Math.PI/2;
+        
+        scene.add(startLineObj);
+        
+        // Create finish line near the end of the track
+        const finishSegIdx = Math.max(0, track.length - 3);
+        const finishSeg = track[finishSegIdx];
+        const finishLineGeo = new THREE.PlaneGeometry(finishSeg.width * 1.2, 3);
+        const finishLineMat = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        finishLineObj = new THREE.Mesh(finishLineGeo, finishLineMat);
+        
+        // Position at the end of track
+        finishLineObj.position.copy(finishSeg.p2);
+        finishLineObj.position.y += 0.2; // Slightly above track
+        
+        // Determine rotation
+        const finishDir = new THREE.Vector3().subVectors(finishSeg.p2, finishSeg.p1).normalize();
+        finishLineObj.rotation.y = Math.atan2(finishDir.x, finishDir.z) + Math.PI/2;
+        finishLineObj.rotation.x = Math.PI/2;
+        
+        scene.add(finishLineObj);
+    }
+    
+    function startRace() {
+        if (!isHost || !connections.length) return;
+        
+        // Reset all players to start position and broadcast
+        resetAllPlayersToStart();
+        
+        // Start countdown
+        broadcastStartRace();
+    }
+    
+    function resetAllPlayersToStart() {
+        // Reset our own position to the very beginning of the track
+        if (trackSegments && trackSegments.length > 0) {
+            // Always use the very first segment
+            const startSeg = trackSegments[0];
+            const startPos = startSeg.p1.clone();
+            startPos.y += 2; // Elevate slightly to avoid collision issues
+            
+            // Calculate angle based on direction from p1 to p2
+            const startDir = new THREE.Vector3().subVectors(startSeg.p2, startSeg.p1).normalize();
+            const startAngle = Math.atan2(startDir.x, startDir.z);
+            
+            // Force position reset for local player
+            carPosition.copy(startPos);
+            carAngle = startAngle;
+            carVelocity.set(0, 0, 0);
+            carSpeed = 0;
+            raceFinished = false;
+            finishLinePassed = false;
+            
+            // Update respawn point to match
+            respawnPoint = {
+                pos: startPos,
+                angle: startAngle
+            };
+        }
+        
+        // Tell others to reset with an EXPLICIT command
+        connections.forEach(conn => {
+            if (conn.open) {
+                conn.send({
+                    type: 'forceResetToStart',
+                    startPos: respawnPoint ? {
+                        x: respawnPoint.pos.x,
+                        y: respawnPoint.pos.y,
+                        z: respawnPoint.pos.z,
+                        angle: respawnPoint.angle
+                    } : null
+                });
+            }
+        });
+    }
+    
+    function broadcastStartRace() {
+        connections.forEach(conn => {
+            if (conn.open) {
+                conn.send({
+                    type: 'startRaceCountdown'
+                });
+            }
+        });
+        
+        // Start our own countdown too
+        startRaceCountdown();
+    }
+    
+    function startRaceCountdown() {
+        const countdown = document.getElementById('countdown');
+        countdown.style.display = 'block';
+        
+        // Lock controls during countdown
+        controlsLocked = true;
+        
+        // 3...2...1...GO sequence
+        countdown.textContent = '3';
+        setTimeout(() => {
+            countdown.textContent = '2';
+            setTimeout(() => {
+                countdown.textContent = '1';
+                setTimeout(() => {
+                    countdown.textContent = 'GO!';
+                    raceActive = true;
+                    raceStartTime = Date.now();
+                    controlsLocked = false; // Enable controls on GO
+                    
+                    // Start spawning enemies
+                    spawnEnemies();
+                    
+                    // Hide countdown after a moment
+                    setTimeout(() => {
+                        countdown.style.display = 'none';
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }, 1000);
+    }
+    
+    function checkFinishLine() {
+        if (!finishLineObj || finishLinePassed) return;
+        
+        const distToFinish = carPosition.distanceTo(finishLineObj.position);
+        if (distToFinish < 5) {
+            finishLinePassed = true;
+            const finishTime = Date.now() - raceStartTime;
+            
+            // Display finish time
+            const minutes = Math.floor(finishTime / 60000);
+            const seconds = Math.floor((finishTime % 60000) / 1000);
+            const ms = finishTime % 1000;
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+            
+            const feedback = document.createElement('div');
+            feedback.textContent = `Finish! Time: ${timeStr}`;
+            feedback.style.position = 'absolute';
+            feedback.style.top = '30%';
+            feedback.style.left = '50%';
+            feedback.style.transform = 'translate(-50%, -50%)';
+            feedback.style.color = '#ff0000';
+            feedback.style.fontSize = '2em';
+            feedback.style.fontWeight = 'bold';
+            feedback.style.zIndex = '100';
+            document.body.appendChild(feedback);
+            
+            // Remove after a few seconds
+            setTimeout(() => {
+                document.body.removeChild(feedback);
+            }, 5000);
+            
+            // Broadcast finish to other players
+            if (peer && connections.length) {
+                connections.forEach(conn => {
+                    if (conn.open) {
+                        conn.send({
+                            type: 'playerFinished',
+                            playerId: playerId,
+                            time: finishTime
+                        });
+                    }
+                });
+            }
+        }
+    }
+    
+    // --- Enemy System ---
+    function spawnEnemies() {
+        // Clear any existing enemy spawn interval
+        if (enemySpawnInterval) {
+            clearInterval(enemySpawnInterval);
+        }
+        
+        // Start spawning enemies every few seconds
+        enemySpawnInterval = setInterval(() => {
+            if (raceActive && !gameOver) {
+                spawnFallingHammer();
+            }
+        }, 5000); // Spawn every 5 seconds
+    }
+    
+    function spawnFallingHammer() {
+        // Don't spawn if car position isn't defined yet
+        if (!carPosition) return;
+        
+        // Create a position near the player but slightly ahead
+        const offset = 30 + Math.random() * 40; // 30-70 units ahead
+        const spread = 10 + Math.random() * 15; // 10-25 units to the side
+        
+        // Calculate position based on player direction
+        const spawnPos = new THREE.Vector3(
+            carPosition.x + (Math.cos(carAngle) * offset) + (Math.sin(carAngle) * spread * (Math.random() > 0.5 ? 1 : -1)),
+            carPosition.y + 50, // High above
+            carPosition.z + (Math.sin(carAngle) * offset) + (Math.cos(carAngle) * spread * (Math.random() > 0.5 ? 1 : -1))
+        );
+        
+        // Create hammer geometry
+        const hammerHead = new THREE.Group();
+        
+        // Head of hammer
+        const headGeo = new THREE.BoxGeometry(4, 3, 4);
+        const headMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        hammerHead.add(head);
+        
+        // Handle of hammer
+        const handleGeo = new THREE.CylinderGeometry(0.5, 0.5, 8);
+        const handleMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+        const handle = new THREE.Mesh(handleGeo, handleMat);
+        handle.position.y = -5.5;
+        handle.rotation.x = Math.PI / 2;
+        hammerHead.add(handle);
+        
+        // Warning indicator (red cone)
+        const warnGeo = new THREE.ConeGeometry(1, 4, 8);
+        const warnMat = new THREE.MeshBasicMaterial({ 
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.7
+        });
+        const warning = new THREE.Mesh(warnGeo, warnMat);
+        warning.position.y = -10;
+        warning.rotation.x = Math.PI;
+        hammerHead.add(warning);
+        
+        // Add to scene
+        scene.add(hammerHead);
+        hammerHead.position.copy(spawnPos);
+        
+        // Store enemy data
+        const enemy = {
+            mesh: hammerHead,
+            position: spawnPos.clone(),
+            velocity: new THREE.Vector3(0, 0, 0),
+            active: true,
+            impactPoint: new THREE.Vector3(spawnPos.x, 0, spawnPos.z),
+            warning: warning
+        };
+        
+        enemies.push(enemy);
+        
+        // Show danger indicator
+        showDangerWarning();
+    }
+    
+    function updateEnemies() {
+        // Update each enemy
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
+            if (!enemy.active) continue;
+            
+            // Apply gravity
+            enemy.velocity.y -= 0.4; // Faster than car gravity
+            
+            // Move hammer
+            enemy.position.add(enemy.velocity);
+            enemy.mesh.position.copy(enemy.position);
+            
+            // Add spin effect
+            enemy.mesh.rotation.z += 0.05;
+            
+            // Check for track collision using similar logic as the car
+            let hitTrack = false;
+            for (let j = 0; j < trackSegments.length; j++) {
+                let seg = trackSegments[j];
+                let segVec = new THREE.Vector3().subVectors(seg.p2, seg.p1);
+                let segLen = segVec.length();
+                let toCar = new THREE.Vector3().subVectors(enemy.position, seg.p1);
+                let t = Math.max(0, Math.min(1, segVec.dot(toCar) / (segLen * segLen)));
+                let closest = lerpVec3(seg.p1, seg.p2, t);
+                let distXZ = Math.sqrt(
+                    Math.pow(enemy.position.x - closest.x, 2) +
+                    Math.pow(enemy.position.z - closest.z, 2)
+                );
+                if (distXZ < seg.width / 2) {
+                    let yOnTrack = closest.y + 1.5;
+                    if (enemy.position.y < yOnTrack && enemy.velocity.y < 0) {
+                        // Position the hammer on the track surface
+                        enemy.position.y = yOnTrack;
+                        hitTrack = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Handle impact on track or ground
+            if (hitTrack || enemy.position.y < 1.5) {
+                // Disable enemy
+                enemy.active = false;
+                
+                // Create impact effect
+                createImpactEffect(enemy.position.clone());
+                
+                // Check for collision with player
+                const distToPlayer = new THREE.Vector2(enemy.position.x, enemy.position.z)
+                    .distanceTo(new THREE.Vector2(carPosition.x, carPosition.z));
+                
+                if (distToPlayer < 6) {
+                    // Hit player!
+                    handleHammerHit();
+                }
+                
+                // Remove after delay
+                setTimeout(() => {
+                    if (enemy.mesh && enemy.mesh.parent) {
+                        scene.remove(enemy.mesh);
+                        enemies.splice(enemies.indexOf(enemy), 1);
+                    }
+                }, 3000);
+            }
+        }
+    }
+    
+    function createImpactEffect(position) {
+        // Create dust particles
+        const particleCount = 20;
+        const particles = new THREE.Group();
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particleGeo = new THREE.SphereGeometry(0.3, 4, 4);
+            const particleMat = new THREE.MeshBasicMaterial({
+                color: 0xbbbbbb,
+                transparent: true,
+                opacity: 0.8
+            });
+            const particle = new THREE.Mesh(particleGeo, particleMat);
+            
+            // Random position around impact
+            particle.position.x = position.x + (Math.random() * 6 - 3);
+            particle.position.y = position.y + (Math.random() * 2);
+            particle.position.z = position.z + (Math.random() * 6 - 3);
+            
+            // Random velocity
+            particle.userData.velocity = new THREE.Vector3(
+                Math.random() * 0.3 - 0.15,
+                Math.random() * 0.2 + 0.1,
+                Math.random() * 0.3 - 0.15
+            );
+            
+            particles.add(particle);
+        }
+        
+        scene.add(particles);
+        
+        // Remove after animation
+        setTimeout(() => {
+            scene.remove(particles);
+        }, 2000);
+        
+        // Create shockwave ring
+        const ringGeo = new THREE.RingGeometry(0.5, 1.5, 16);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.copy(position);
+        ring.position.y = 0.2;
+        ring.rotation.x = -Math.PI / 2;
+        scene.add(ring);
+        
+        // Animate expansion and fade
+        let scale = 1;
+        const expandRing = setInterval(() => {
+            scale += 1;
+            ring.scale.set(scale, scale, scale);
+            ring.material.opacity -= 0.05;
+            
+            if (ring.material.opacity <= 0) {
+                clearInterval(expandRing);
+                scene.remove(ring);
+            }
+        }, 100);
+    }
+    
+    function handleHammerHit() {
+        // Visual effect
+        carVelocity.y = 3; // Bounce up
+        
+        // Reduce life
+        lives--;
+        updateGameUI();
+        
+        if (lives <= 0) {
+            showGameOver();
+        }
+        
+        // Visual feedback
+        const feedback = document.createElement('div');
+        feedback.textContent = 'SMASHED!';
+        feedback.style.position = 'absolute';
+        feedback.style.top = '50%';
+        feedback.style.left = '50%';
+        feedback.style.transform = 'translate(-50%, -50%)';
+        feedback.style.color = '#ff0000';
+        feedback.style.fontSize = '3em';
+        feedback.style.fontWeight = 'bold';
+        feedback.style.textShadow = '0 0 10px #ff0000';
+        feedback.style.pointerEvents = 'none';
+        feedback.style.zIndex = '20';
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+            document.body.removeChild(feedback);
+        }, 1000);
+    }
+    
+    function showDangerWarning() {
+        const indicator = document.getElementById('dangerIndicator');
+        indicator.style.display = 'block';
+        
+        // Update the style so it's more visible
+        indicator.style.top = '20%'; // Move higher up
+        indicator.style.background = 'rgba(0,0,0,0.5)';
+        indicator.style.padding = '10px 20px';
+        indicator.style.borderRadius = '8px';
+        
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 2000);
+    }
+
     // Add event listeners
     function addGameEventListeners() {
         document.getElementById('restartGame').addEventListener('click', restartGame);
@@ -1340,9 +2287,54 @@
 
     window.onload = function() {
         initThreeJS();
-        animate();
         updateGameUI();
         addGameEventListeners();
+        
+        // Get player name from localStorage if available
+        const savedName = localStorage.getItem('playerName');
+        if (savedName) {
+            document.getElementById('playerName').value = savedName;
+            playerName = savedName;
+        }
+        
+        // Save name when changed
+        document.getElementById('playerName').addEventListener('change', (e) => {
+            localStorage.setItem('playerName', e.target.value);
+            playerName = e.target.value;
+        });
+        
+        // Add jump indicator update
+        const jumpIndicator = document.getElementById('jumpIndicator');
+        setInterval(() => {
+            if (canJump) {
+                jumpIndicator.textContent = "Jump Ready";
+                jumpIndicator.classList.remove('cooldown');
+            } else {
+                jumpIndicator.textContent = "Jump Cooldown";
+                jumpIndicator.classList.add('cooldown');
+            }
+        }, 100);
+        
+        // Fetch latest block more robustly
+        fetchLatestBlockInfo().then(block => {
+            if (block) {
+                animate(); // Start animation after block is loaded
+                joinOrCreateRoom(block); // Join game with latest block
+            } else {
+                // Use a default block if all else fails
+                const defaultBlock = '783000';
+                document.getElementById('blockHash').value = defaultBlock;
+                animate();
+                joinOrCreateRoom(defaultBlock);
+            }
+        }).catch(error => {
+            console.error("Error in block loading:", error);
+            // Fallback to default block
+            const defaultBlock = '783000';
+            document.getElementById('blockHash').value = defaultBlock;
+            animate();
+            joinOrCreateRoom(defaultBlock);
+        });
     };
     </script>
 </body>
