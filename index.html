@@ -93,6 +93,73 @@
             z-index: 10;
             pointer-events: none;
         }
+        #multiplayer {
+            position: absolute;
+            top: 48px;
+            right: 16px;
+            background: rgba(24,24,24,0.85);
+            color: #ffa94d;
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 10;
+            width: 220px;
+            text-align: center;
+        }
+        #multiplayer button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            background: #ffa94d;
+            color: #181818;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        #peerId {
+            font-size: 0.9em;
+            word-break: break-all;
+            background: #333;
+            padding: 4px;
+            border-radius: 2px;
+            margin: 5px 0;
+        }
+        #playersList {
+            font-size: 0.9em;
+            text-align: left;
+            margin-top: 5px;
+        }
+        #minimap {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #ffa94d;
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .otherPlayerMarker {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            margin-left: -3px;
+            margin-top: -3px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+        .playerMarker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            margin-left: -4px;
+            margin-top: -4px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            background: #ff0;
+        }
     </style>
 </head>
 <body>
@@ -111,6 +178,26 @@
         <div id="loadingText">Loading block data...</div>
         <div id="loadingBar"><div id="loadingBarProgress"></div></div>
     </div>
+    <div id="multiplayer">
+        <h3 style="margin-top:0">Multiplayer</h3>
+        <div id="hostOptions">
+            <button id="createGame">Create Game</button>
+            <div id="gameCreated" style="display:none">
+                <p>Share this game ID:</p>
+                <div id="peerId"></div>
+                <p>Connected players: <span id="playerCount">0</span></p>
+            </div>
+        </div>
+        <div id="joinOptions">
+            <p>- OR -</p>
+            <input type="text" id="joinGameId" placeholder="Paste game ID">
+            <button id="joinGame">Join Game</button>
+        </div>
+        <div id="connectionStatus"></div>
+        <div id="playersList"></div>
+    </div>
+    <div id="minimap"></div>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
     // --- Minimal Block Data Fetch ---
@@ -335,16 +422,29 @@
     function createCar(startPos, startAngle) {
         if (car) scene.remove(car);
         let geometry = new THREE.BoxGeometry(3, 2, 5);
-        let material = new THREE.MeshPhongMaterial({ color: 0xf7931a });
+        // Convert player color hex to number
+        const colorNum = parseInt(playerColor.replace('#', '0x'), 16);
+        let material = new THREE.MeshPhongMaterial({ 
+            color: colorNum,
+            emissive: new THREE.Color(colorNum).multiplyScalar(0.2) 
+        });
         car = new THREE.Mesh(geometry, material);
         car.position.copy(startPos || new THREE.Vector3(0, 5, 0));
         car.rotation.y = startAngle || 0;
+        
+        // Add self label
+        const selfLabel = createPlayerLabel("YOU");
+        car.add(selfLabel);
+        
         scene.add(car);
         carSpeed = 0;
         carAngle = startAngle || 0;
         carPosition.copy(car.position);
         carVelocity.set(0, 0, 0);
         carDirection.set(Math.sin(carAngle), 0, Math.cos(carAngle));
+        
+        // Initialize minimap
+        initMinimap();
     }
 
     window.addEventListener('keydown', e => { keys[e.code] = true; });
@@ -454,6 +554,25 @@
     function animate() {
         requestAnimationFrame(animate);
         if (car) updateCar();
+        
+        // Broadcast position at a reasonable rate (10 times per second)
+        if (peer && connections.length > 0 && Date.now() % 100 < 20) {
+            broadcastPosition();
+        }
+        
+        // Remove stale players (disconnected but not caught by close event)
+        const now = Date.now();
+        Object.keys(otherPlayers).forEach(id => {
+            if (now - otherPlayers[id].lastUpdate > 5000) {
+                removeOtherPlayerCar(id);
+            }
+        });
+        
+        // Update minimap if it exists
+        if (document.getElementById('minimap')) {
+            updateMinimapMarkers();
+        }
+        
         renderer.render(scene, camera);
     }
 
@@ -469,6 +588,423 @@
         }
     }
 
+    // --- Multiplayer Logic ---
+    let peer = null;
+    let connections = [];
+    let isHost = false;
+    let playerColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+    let otherPlayers = {}; // {peerId: {mesh, position, angle, lastUpdate}}
+    let playerId = null;
+
+    function initMultiplayer() {
+        document.getElementById('createGame').addEventListener('click', createGame);
+        document.getElementById('joinGame').addEventListener('click', joinGame);
+    }
+
+    function createGame() {
+        isHost = true;
+        peer = new Peer();
+        
+        peer.on('open', id => {
+            playerId = id;
+            document.getElementById('gameCreated').style.display = 'block';
+            document.getElementById('peerId').textContent = id;
+            document.getElementById('joinOptions').style.display = 'none';
+            document.getElementById('connectionStatus').textContent = 'Game created!';
+            
+            // Update car color to match player color
+            updateCarColor(playerColor);
+            
+            // Handle incoming connections
+            peer.on('connection', conn => {
+                handleConnection(conn);
+            });
+        });
+        
+        peer.on('error', err => {
+            document.getElementById('connectionStatus').textContent = 'Error: ' + err.message;
+        });
+    }
+
+    function joinGame() {
+        const hostId = document.getElementById('joinGameId').value.trim();
+        if (!hostId) {
+            document.getElementById('connectionStatus').textContent = 'Please enter a game ID';
+            return;
+        }
+        
+        peer = new Peer();
+        
+        peer.on('open', id => {
+            playerId = id;
+            // Update car color to match player color
+            updateCarColor(playerColor);
+            
+            const conn = peer.connect(hostId);
+            handleConnection(conn);
+            document.getElementById('connectionStatus').textContent = 'Connecting to game...';
+            document.getElementById('hostOptions').style.display = 'none';
+        });
+        
+        peer.on('error', err => {
+            document.getElementById('connectionStatus').textContent = 'Error: ' + err.message;
+        });
+    }
+
+    function updateCarColor(colorHex) {
+        if (!car) return;
+        // Convert hex string to number for Three.js
+        const colorNum = parseInt(colorHex.replace('#', '0x'), 16);
+        car.material.color.set(colorNum);
+    }
+
+    function handleConnection(conn) {
+        connections.push(conn);
+        updatePlayerCount();
+        
+        conn.on('open', () => {
+            document.getElementById('connectionStatus').textContent = 
+                isHost ? 'Player connected!' : 'Connected to game!';
+            
+            // Send initial data (current block and player info)
+            conn.send({
+                type: 'init',
+                blockHash: document.getElementById('blockHash').value,
+                playerId: playerId,
+                playerColor: playerColor
+            });
+        });
+        
+        conn.on('data', data => {
+            handlePeerMessage(conn.peer, data);
+        });
+        
+        conn.on('close', () => {
+            connections = connections.filter(c => c !== conn);
+            updatePlayerCount();
+            removeOtherPlayerCar(conn.peer);
+        });
+    }
+
+    function updatePlayerCount() {
+        document.getElementById('playerCount').textContent = connections.length;
+    }
+
+    function handlePeerMessage(peerId, data) {
+        switch(data.type) {
+            case 'init':
+                // If we join and host sends block data, load that block
+                if(data.blockHash) {
+                    document.getElementById('blockHash').value = data.blockHash;
+                    loadBlockData(data.blockHash);
+                }
+                createOtherPlayerCar(peerId, data.playerColor || '#ff0000');
+                break;
+                
+            case 'position':
+                updateOtherPlayerPosition(peerId, data);
+                break;
+        }
+    }
+
+    function createOtherPlayerCar(peerId, colorHex) {
+        if (otherPlayers[peerId]) removeOtherPlayerCar(peerId);
+        
+        let geometry = new THREE.BoxGeometry(3, 2, 5);
+        // Convert hex string to number for Three.js
+        const colorNum = parseInt(colorHex.replace('#', '0x'), 16);
+        let material = new THREE.MeshPhongMaterial({ 
+            color: colorNum,
+            emissive: new THREE.Color(colorNum).multiplyScalar(0.3) // Make it glow slightly
+        });
+        let playerCar = new THREE.Mesh(geometry, material);
+        scene.add(playerCar);
+        
+        // Add visible identifier with larger text
+        const playerLabel = createPlayerLabel("P" + Object.keys(otherPlayers).length + 1);
+        playerLabel.position.set(0, 4, 0); // Position higher above car
+        playerLabel.scale.set(4, 2, 1);    // Make it larger
+        playerCar.add(playerLabel);
+        
+        // Add highlighting effect to make other cars more visible
+        const highlightGeo = new THREE.BoxGeometry(3.5, 2.5, 5.5);
+        const highlightMat = new THREE.MeshBasicMaterial({
+            color: colorNum,
+            transparent: true,
+            opacity: 0.2,
+            wireframe: false
+        });
+        const highlight = new THREE.Mesh(highlightGeo, highlightMat);
+        playerCar.add(highlight);
+        
+        otherPlayers[peerId] = {
+            mesh: playerCar,
+            position: new THREE.Vector3(0, 5, 10),
+            angle: 0,
+            lastUpdate: Date.now(),
+            color: colorHex,
+            highlight: highlight
+        };
+        
+        // Update player list display
+        updatePlayersList();
+        // Update minimap markers
+        updateMinimapMarkers();
+        
+        console.log("Created player car for:", peerId);
+    }
+    
+    // Create a floating label above player cars
+    function createPlayerLabel(text) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 64;
+        
+        // Draw background - using semi-transparent for better visibility
+        context.fillStyle = 'rgba(0,0,0,0.7)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw border
+        context.strokeStyle = '#ffffff';
+        context.lineWidth = 2;
+        context.strokeRect(2, 2, canvas.width-4, canvas.height-4);
+        
+        // Draw text - larger and bold
+        context.font = 'bold 28px Arial';
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, canvas.width/2, canvas.height/2);
+        
+        // Create sprite
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ 
+            map: texture,
+            transparent: true,
+            depthTest: false // Always render on top
+        });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.set(0, 3, 0); // Position above car
+        sprite.scale.set(3, 1.5, 1);
+        
+        return sprite;
+    }
+    
+    function updateOtherPlayerPosition(peerId, data) {
+        if (!otherPlayers[peerId]) {
+            createOtherPlayerCar(peerId, data.color || '#ff0000');
+            return;
+        }
+        
+        const player = otherPlayers[peerId];
+        player.position.set(data.x, data.y, data.z);
+        player.angle = data.angle;
+        player.lastUpdate = Date.now();
+        
+        // Apply mild interpolation for smoother movement
+        player.mesh.position.lerp(player.position, 0.5);
+        player.mesh.rotation.y = player.angle;
+        
+        // Pulse the highlight to make the car more visible
+        const pulse = (Math.sin(Date.now() * 0.005) + 1) * 0.5 * 0.3 + 0.1;
+        if (player.highlight) player.highlight.material.opacity = pulse;
+        
+        // Update minimap
+        updateMinimapMarkers();
+    }
+
+    // Add the missing broadcastPosition function
+    function broadcastPosition() {
+        if (!peer || !carPosition) return;
+        
+        const posData = {
+            type: 'position',
+            x: carPosition.x,
+            y: carPosition.y,
+            z: carPosition.z,
+            angle: carAngle,
+            color: playerColor
+        };
+        
+        connections.forEach(conn => {
+            if (conn.open) {
+                conn.send(posData);
+            }
+        });
+    }
+    
+    // Add the missing updatePlayersList function
+    function updatePlayersList() {
+        const list = document.getElementById('playersList');
+        list.innerHTML = '<p><strong>Players:</strong></p>';
+        
+        // Add yourself
+        const selfItem = document.createElement('div');
+        selfItem.textContent = 'You' + (isHost ? ' (Host)' : '');
+        selfItem.style.color = playerColor;
+        list.appendChild(selfItem);
+        
+        // Add other players
+        Object.keys(otherPlayers).forEach(id => {
+            const playerItem = document.createElement('div');
+            playerItem.textContent = id.substring(0, 8) + '...';
+            playerItem.style.color = otherPlayers[id].color;
+            list.appendChild(playerItem);
+        });
+    }
+
+    // --- Minimap Implementation ---
+    let minimapTrack = [];
+    let minimapBounds = {
+        minX: 0, maxX: 0,
+        minZ: 0, maxZ: 0,
+        width: 0, height: 0
+    };
+    
+    function initMinimap() {
+        // Create minimap container if it doesn't exist
+        const minimap = document.getElementById('minimap');
+        minimap.innerHTML = '';
+        
+        if (trackSegments && trackSegments.length > 0) {
+            // Calculate track bounds
+            calculateTrackBounds();
+            
+            // Create track visualization
+            drawTrackOnMinimap();
+        }
+        
+        // Create player marker
+        const playerMarker = document.createElement('div');
+        playerMarker.className = 'playerMarker';
+        playerMarker.id = 'playerMarker';
+        playerMarker.style.backgroundColor = playerColor;
+        minimap.appendChild(playerMarker);
+        
+        // Update markers immediately
+        updateMinimapMarkers();
+    }
+    
+    function calculateTrackBounds() {
+        minimapBounds.minX = Infinity;
+        minimapBounds.maxX = -Infinity;
+        minimapBounds.minZ = Infinity;
+        minimapBounds.maxZ = -Infinity;
+        
+        // Find min/max coordinates of track
+        trackSegments.forEach(segment => {
+            minimapBounds.minX = Math.min(minimapBounds.minX, segment.p1.x, segment.p2.x);
+            minimapBounds.maxX = Math.max(minimapBounds.maxX, segment.p1.x, segment.p2.x);
+            minimapBounds.minZ = Math.min(minimapBounds.minZ, segment.p1.z, segment.p2.z);
+            minimapBounds.maxZ = Math.max(minimapBounds.maxZ, segment.p1.z, segment.p2.z);
+        });
+        
+        // Add some padding
+        const padding = 20;
+        minimapBounds.minX -= padding;
+        minimapBounds.maxX += padding;
+        minimapBounds.minZ -= padding;
+        minimapBounds.maxZ += padding;
+        
+        minimapBounds.width = minimapBounds.maxX - minimapBounds.minX;
+        minimapBounds.height = minimapBounds.maxZ - minimapBounds.minZ;
+    }
+    
+    function drawTrackOnMinimap() {
+        const minimap = document.getElementById('minimap');
+        const minimapWidth = minimap.clientWidth;
+        const minimapHeight = minimap.clientHeight;
+        
+        // Create SVG for track
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        svg.style.position = 'absolute';
+        
+        // Draw each track segment
+        trackSegments.forEach(segment => {
+            // Convert 3D positions to minimap coordinates
+            const x1 = mapValue(segment.p1.x, minimapBounds.minX, minimapBounds.maxX, 0, minimapWidth);
+            const y1 = mapValue(segment.p1.z, minimapBounds.minZ, minimapBounds.maxZ, 0, minimapHeight);
+            const x2 = mapValue(segment.p2.x, minimapBounds.minX, minimapBounds.maxX, 0, minimapWidth);
+            const y2 = mapValue(segment.p2.z, minimapBounds.minZ, minimapBounds.maxZ, 0, minimapHeight);
+            
+            // Create line
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke', '#888');
+            line.setAttribute('stroke-width', '2');
+            svg.appendChild(line);
+        });
+        
+        minimap.appendChild(svg);
+    }
+    
+    function mapValue(value, inMin, inMax, outMin, outMax) {
+        return ((value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+    }
+    
+    function updateMinimapMarkers() {
+        if (!minimapBounds || minimapBounds.width === 0) return;
+        
+        const minimap = document.getElementById('minimap');
+        const minimapWidth = minimap.clientWidth;
+        const minimapHeight = minimap.clientHeight;
+        
+        // Update player marker
+        const playerMarker = document.getElementById('playerMarker');
+        if (playerMarker && carPosition) {
+            const playerX = mapValue(carPosition.x, minimapBounds.minX, minimapBounds.maxX, 0, minimapWidth);
+            const playerZ = mapValue(carPosition.z, minimapBounds.minZ, minimapBounds.maxZ, 0, minimapHeight);
+            playerMarker.style.left = playerX + 'px';
+            playerMarker.style.top = playerZ + 'px';
+        }
+        
+        // Update other players' markers
+        Object.keys(otherPlayers).forEach(id => {
+            const player = otherPlayers[id];
+            let marker = document.getElementById('marker-' + id);
+            
+            if (!marker) {
+                marker = document.createElement('div');
+                marker.className = 'otherPlayerMarker';
+                marker.id = 'marker-' + id;
+                marker.style.backgroundColor = player.color;
+                minimap.appendChild(marker);
+            }
+            
+            const x = mapValue(player.position.x, minimapBounds.minX, minimapBounds.maxX, 0, minimapWidth);
+            const z = mapValue(player.position.z, minimapBounds.minZ, minimapBounds.maxZ, 0, minimapHeight);
+            
+            marker.style.left = x + 'px';
+            marker.style.top = z + 'px';
+        });
+        
+        // Remove markers for disconnected players
+        document.querySelectorAll('.otherPlayerMarker').forEach(marker => {
+            const id = marker.id.replace('marker-', '');
+            if (!otherPlayers[id]) {
+                marker.remove();
+            }
+        });
+    }
+    
+    function removeOtherPlayerCar(peerId) {
+        if (otherPlayers[peerId]) {
+            scene.remove(otherPlayers[peerId].mesh);
+            delete otherPlayers[peerId];
+            updatePlayersList();
+            
+            // Remove from minimap
+            const marker = document.getElementById('marker-' + peerId);
+            if (marker) marker.remove();
+        }
+    }
+    
     // --- UI and Startup ---
     document.getElementById('blockForm').onsubmit = function(e) {
         e.preventDefault();
@@ -479,6 +1015,7 @@
     window.onload = function() {
         initThreeJS();
         loadBlockData(document.getElementById('blockHash').value);
+        initMultiplayer();
         animate();
     };
     </script>
