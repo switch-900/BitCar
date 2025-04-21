@@ -49,6 +49,42 @@
             cursor: pointer;
             font-size: 1em;
         }
+        
+        /* Move block form to sidebar on mobile */
+        @media (max-width: 768px) {
+            #uiBar {
+                display: none; /* Hide on mobile */
+            }
+            
+            /* Style for the block form in sidebar */
+            #sidebarBlockForm {
+                margin-bottom: 15px;
+                width: 100%;
+                display: flex;
+            }
+            
+            #sidebarBlockForm input[type="text"] {
+                padding: 6px 10px;
+                border-radius: 4px 0 0 4px;
+                border: 1px solid #ffa94d;
+                outline: none;
+                font-size: 1em;
+                width: 65%;
+            }
+            
+            #sidebarBlockForm button {
+                padding: 6px 12px;
+                border-radius: 0 4px 4px 0;
+                border: none;
+                background: #ffa94d;
+                color: #181818;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 1em;
+                width: 35%;
+            }
+        }
+        
         #blockInfo {
             margin-left: 24px;
             font-size: 0.95em;
@@ -93,19 +129,35 @@
             font-size: 1em;
             z-index: 10;
             pointer-events: none;
+            max-width: 90%;
+            text-align: center;
         }
+        
+        /* Minimap - in sidebar for mobile */
         #minimap {
-            position: absolute;
-            bottom: 16px;
-            right: 16px;
-            width: 200px;
-            height: 200px;
+            position: relative;
+            width: 100%;
+            height: 180px;
+            margin: 10px 0;
             background: rgba(0,0,0,0.7);
             border: 2px solid #ffa94d;
             border-radius: 4px;
             overflow: hidden;
-            z-index: 10;
         }
+        
+        /* For desktop, position minimap absolutely */
+        @media (min-width: 769px) {
+            #minimap {
+                position: absolute;
+                top: 50px;
+                right: 16px;
+                width: 120px;
+                height: 120px;
+                margin: 0;
+                z-index: 10;
+            }
+        }
+        
         .otherPlayerMarker {
             position: absolute;
             width: 6px;
@@ -293,6 +345,19 @@
             width: 150px;
         }
         
+        /* Move name input to sidebar on mobile */
+        @media (max-width: 768px) {
+            #nameInputContainer {
+                position: relative;
+                top: auto;
+                right: auto;
+                transform: none;
+                margin-bottom: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+        
         #jumpIndicator {
             position: absolute;
             bottom: 60px;
@@ -308,15 +373,59 @@
         #jumpIndicator.cooldown {
             color: #777;
         }
+        
+        /* Hide indicators on mobile */
+        @media (max-width: 768px) {
+            #jumpIndicator, #shootCooldown {
+                display: none;
+            }
+        }
 
-        /* Mobile Controls */
+        /* Improved Mobile Controls - Joystick style */
         #mobileControls {
             position: fixed;
-            bottom: 70px;
+            bottom: 16px;
             left: 0;
             width: 100%;
             display: none;  /* Hidden by default, shown on mobile */
             z-index: 20;
+        }
+        
+        /* Joystick container */
+        #joystickContainer {
+            position: fixed;
+            bottom: 80px;
+            left: 80px;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 169, 77, 0.3);
+            border-radius: 50%;
+            touch-action: none;
+        }
+        
+        #joystickHandle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 169, 77, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            top: 30px;
+            left: 30px;
+            touch-action: none;
+        }
+        
+        /* Simplified action buttons */
+        #actionButtons {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            width: 160px;
+            gap: 16px;
+            justify-content: center;
         }
         
         .control-button {
@@ -328,7 +437,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             user-select: none;
             border: 2px solid rgba(255, 255, 255, 0.7);
@@ -338,36 +447,6 @@
             background: rgba(255, 169, 77, 1);
             transform: scale(0.95);
         }
-        
-        #directionalPad {
-            position: fixed;
-            bottom: 100px;
-            left: 20px;
-            display: grid;
-            grid-template-columns: 60px 60px 60px;
-            grid-template-rows: 60px 60px 60px;
-            gap: 5px;
-        }
-        
-        #actionButtons {
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .action-row {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        
-        .button-up { grid-column: 2; grid-row: 1; }
-        .button-left { grid-column: 1; grid-row: 2; }
-        .button-right { grid-column: 3; grid-row: 2; }
-        .button-down { grid-column: 2; grid-row: 3; }
         
         /* Shooting related styles */
         .laser-beam {
@@ -461,19 +540,64 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Available rooms display */
-        #availableRooms {
-            position: absolute;
-            bottom: 240px;
-            right: 16px;
-            background: rgba(24,24,24,0.85);
-            color: #ffa94d;
-            padding: 10px;
-            border-radius: 8px;
-            z-index: 15;
-            width: 200px;
-            max-height: 300px;
+        /* Game sidebar for mobile - hide non-vital elements */
+        #gameSidebar {
+            position: fixed;
+            top: 0;
+            right: -280px; /* Start hidden off-screen */
+            width: 250px;
+            height: 100%;
+            background: rgba(24,24,24,0.95);
+            z-index: 30;
+            transition: right 0.3s ease;
             overflow-y: auto;
+            padding: 60px 15px 20px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+        }
+        
+        /* Mobile-specific sidebar adjustments */
+        @media (max-width: 768px) {
+            #gameSidebar {
+                width: 80%; /* Wider for mobile */
+                right: -80%; /* Adjust offscreen position */
+            }
+        }
+        
+        #gameSidebarToggle {
+            position: fixed;
+            top: 60px;
+            right: 16px;
+            background: rgba(255,169,77,0.8);
+            color: #181818;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 31;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        /* Sidebar section styles */
+        .sidebar-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,169,77,0.3);
+            padding-bottom: 15px;
+        }
+        
+        .sidebar-section h3 {
+            color: #ffa94d;
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+        
+        /* Available rooms display - moved to sidebar for mobile */
+        #availableRooms {
+            margin-bottom: 20px;
+            width: 100%;
         }
         
         .room-item {
@@ -550,7 +674,7 @@
         #fpsCounter {
             position: absolute;
             top: 50px;
-            right: 16px;
+            right: 145px;
             background: rgba(0,0,0,0.5);
             color: #00ff00;
             padding: 5px 10px;
@@ -559,25 +683,16 @@
             z-index: 10;
         }
         
-        /* Settings panel */
+        /* Settings panel - moved to sidebar for mobile */
         #settingsPanel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(24,24,24,0.95);
-            color: #ffa94d;
-            padding: 20px;
-            border-radius: 8px;
-            z-index: 300;
-            width: 300px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: none;
+            margin-bottom: 20px;
+            width: 100%;
         }
         
         #settingsPanel h2 {
             margin-top: 0;
             text-align: center;
+            font-size: 1.2em;
         }
         
         .setting-row {
@@ -607,17 +722,81 @@
             border: 1px solid #555;
         }
         
-        #settingsToggle {
-            position: absolute;
-            top: 50px;
-            right: 250px;
-            background: rgba(24,24,24,0.85);
-            color: #ffa94d;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            z-index: 10;
+        /* Mobile-only class */
+        .mobile-only {
+            display: none; /* Hidden by default, shown on mobile */
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #instructions {
+                font-size: 0.9em;
+                padding: 6px 12px;
+                bottom: 120px;
+            }
+            
+            #gameUI {
+                padding: 6px 12px;
+                font-size: 0.9em;
+                /* Make UI more transparent on mobile for cleaner look */
+                background: rgba(24,24,24,0.6);
+            }
+            
+            #nameInputContainer {
+                padding: 6px 12px;
+            }
+            
+            #playerName {
+                width: 120px;
+            }
+            
+            #gameOverScreen h2 {
+                font-size: 2.2em;
+            }
+            
+            /* Show mobile-only elements */
+            .mobile-only {
+                display: block;
+            }
+            
+            /* Clean up mobile UI - hide non-essential elements */
+            #fpsCounter {
+                right: 16px;
+                top: 16px;
+                background: rgba(0,0,0,0.3);
+            }
+        }
+        
+        /* Mobile joystick adjustments */
+        @media (max-width: 480px) {
+            #joystickContainer {
+                width: 100px;
+                height: 100px;
+                left: 60px;
+            }
+            
+            #joystickHandle {
+                width: 50px;
+                height: 50px;
+                top: 25px;
+                left: 25px;
+            }
+            
+            .control-button {
+                width: 50px;
+                height: 50px;
+            }
+            
+            #actionButtons {
+                width: 140px;
+                gap: 12px;
+            }
+            
+            /* Further clean up very small screens */
+            #gameUI {
+                background: rgba(24,24,24,0.4);
+                padding: 4px 8px;
+            }
         }
     </style>
 </head>
@@ -668,62 +847,99 @@
     <div id="scorePopup"></div>
     <div id="dangerIndicator">DANGER INCOMING!</div>
     <div id="fpsCounter">FPS: 60</div>
-    <div id="settingsToggle">⚙️ Settings</div>
     
-    <!-- Settings Panel -->
-    <div id="settingsPanel">
-        <h2>Game Settings</h2>
-        <div class="setting-row">
-            <label for="qualitySetting">Graphics Quality:</label>
-            <select id="qualitySetting">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-            </select>
+    <!-- Game Sidebar Toggle Button -->
+    <div id="gameSidebarToggle">≡</div>
+    
+    <!-- Game Sidebar for Non-vital Elements -->
+    <div id="gameSidebar">
+        <!-- Mobile Block Input Form (only shown on mobile) -->
+        <div class="sidebar-section mobile-only">
+            <h3>Load Track</h3>
+            <form id="sidebarBlockForm" style="display:flex;">
+                <input type="text" id="sidebarBlockHash" value="676767" placeholder="Block # or hash">
+                <button type="submit">Load</button>
+            </form>
+            <div id="sidebarBlockInfo" style="font-size: 0.8em; margin-top: 5px;">
+                Block: <span id="sidebarBlockHeight">-</span> | TX: <span id="sidebarTxCount">-</span>
+            </div>
         </div>
-        <div class="setting-row">
-            <label for="soundVolume">Sound Volume:</label>
-            <input type="range" id="soundVolume" min="0" max="100" value="70">
+        
+        <!-- Mobile Player Name (only shown on mobile) -->
+        <div class="sidebar-section mobile-only" id="sidebarNameInput">
+            <!-- Will be moved here via JS for mobile -->
         </div>
-        <div class="setting-row">
-            <label for="showFps">Show FPS:</label>
-            <input type="checkbox" id="showFps" checked>
+        
+        <!-- Mobile Minimap (only shown on mobile) -->
+        <div class="sidebar-section mobile-only" id="sidebarMinimap">
+            <h3>Track Map</h3>
+            <!-- Will be moved here via JS for mobile -->
         </div>
-        <div class="setting-row">
-            <label for="difficultyLevel">Difficulty:</label>
-            <select id="difficultyLevel">
-                <option value="easy">Easy</option>
-                <option value="normal" selected>Normal</option>
-                <option value="hard">Hard</option>
-            </select>
+        
+        <!-- Settings Panel - Moved to sidebar -->
+        <div class="sidebar-section">
+            <h3>Game Settings</h3>
+            <div id="settingsPanel">
+                <div class="setting-row">
+                    <label for="qualitySetting">Graphics Quality:</label>
+                    <select id="qualitySetting">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="soundVolume">Sound Volume:</label>
+                    <input type="range" id="soundVolume" min="0" max="100" value="70">
+                </div>
+                <div class="setting-row">
+                    <label for="showFps">Show FPS:</label>
+                    <input type="checkbox" id="showFps" checked>
+                </div>
+                <div class="setting-row">
+                    <label for="difficultyLevel">Difficulty:</label>
+                    <select id="difficultyLevel">
+                        <option value="easy">Easy</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <button id="saveSettings">Save Settings</button>
+            </div>
         </div>
-        <button id="saveSettings">Save Settings</button>
+        
+        <!-- Available Rooms - Moved to sidebar -->
+        <div class="sidebar-section">
+            <h3>Available Rooms</h3>
+            <div id="availableRooms">
+                <div id="roomsList"></div>
+                <button id="refreshRooms">Refresh Rooms</button>
+            </div>
+        </div>
+        
+        <!-- Player stats section -->
+        <div class="sidebar-section">
+            <h3>Game Stats</h3>
+            <div id="playerStats">
+                <p>Connected players: <span id="playerCountSidebar">0</span></p>
+                <div id="playersListSidebar" style="max-height: 150px; overflow-y: auto; margin-top: 10px; font-size: 0.9em;"></div>
+            </div>
+        </div>
     </div>
     
-    <!-- Available Rooms Display -->
-    <div id="availableRooms">
-        <h3 style="margin-top:0; text-align:center">Available Rooms</h3>
-        <div id="roomsList"></div>
-        <button id="refreshRooms">Refresh Rooms</button>
-    </div>
-    
-    <!-- Mobile Controls -->
+    <!-- Mobile Controls with Joystick -->
     <div id="mobileControls">
-        <div id="directionalPad">
-            <div class="control-button button-up">▲</div>
-            <div class="control-button button-left">◀</div>
-            <div class="control-button button-right">▶</div>
-            <div class="control-button button-down">▼</div>
+        <!-- Joystick for directional control -->
+        <div id="joystickContainer">
+            <div id="joystickHandle"></div>
         </div>
+        
+        <!-- Action buttons -->
         <div id="actionButtons">
-            <div class="action-row">
-                <div class="control-button" id="actionBoost">💨</div>
-                <div class="control-button" id="actionJump">↑</div>
-            </div>
-            <div class="action-row">
-                <div class="control-button" id="actionDrift">↺</div>
-                <div class="control-button" id="actionShoot">🔫</div>
-            </div>
+            <div class="control-button" id="actionJump">↑</div>
+            <div class="control-button" id="actionBoost">💨</div>
+            <div class="control-button" id="actionDrift">↺</div>
+            <div class="control-button" id="actionShoot">🔫</div>
         </div>
     </div>
     
@@ -804,6 +1020,9 @@
                 if (response.ok) {
                     const blockHeight = await response.text();
                     document.getElementById('blockHash').value = blockHeight;
+                    if (document.getElementById('sidebarBlockHash')) {
+                        document.getElementById('sidebarBlockHash').value = blockHeight;
+                    }
                     showLoading(false);
                     return blockHeight;
                 }
@@ -816,9 +1035,13 @@
                 response = await fetch('https://blockchain.info/latestblock');
                 if (response.ok) {
                     data = await response.json();
-                    document.getElementById('blockHash').value = data.hash || data.height;
+                    const blockId = data.hash || data.height;
+                    document.getElementById('blockHash').value = blockId;
+                    if (document.getElementById('sidebarBlockHash')) {
+                        document.getElementById('sidebarBlockHash').value = blockId;
+                    }
                     showLoading(false);
-                    return data.hash || data.height;
+                    return blockId;
                 }
             } catch (err) {
                 console.log("Direct API attempt failed, trying CORS proxy...");
@@ -830,9 +1053,13 @@
                 response = await fetch(corsProxy + 'https://blockchain.info/latestblock');
                 if (response.ok) {
                     data = await response.json();
-                    document.getElementById('blockHash').value = data.hash || data.height;
+                    const blockId = data.hash || data.height;
+                    document.getElementById('blockHash').value = blockId;
+                    if (document.getElementById('sidebarBlockHash')) {
+                        document.getElementById('sidebarBlockHash').value = blockId;
+                    }
                     showLoading(false);
-                    return data.hash || data.height;
+                    return blockId;
                 }
             } catch (err) {
                 console.log("All API attempts failed...");
@@ -842,12 +1069,18 @@
             const fallbackBlock = '783000'; // A recent block height that works
             console.log("Using fallback block:", fallbackBlock);
             document.getElementById('blockHash').value = fallbackBlock;
+            if (document.getElementById('sidebarBlockHash')) {
+                document.getElementById('sidebarBlockHash').value = fallbackBlock;
+            }
             showLoading(false);
             return fallbackBlock;
         } catch (e) {
             console.error("Error fetching latest block:", e);
             const fallbackBlock = '783000';
             document.getElementById('blockHash').value = fallbackBlock;
+            if (document.getElementById('sidebarBlockHash')) {
+                document.getElementById('sidebarBlockHash').value = fallbackBlock;
+            }
             showLoading(false);
             return fallbackBlock;
         }
@@ -856,6 +1089,13 @@
     function updateBlockInfo(meta) {
         document.getElementById('blockHeight').textContent = meta.height || '-';
         document.getElementById('txCount').textContent = meta.tx_count || '-';
+        
+        // Update sidebar block info for mobile
+        if (document.getElementById('sidebarBlockHeight')) {
+            document.getElementById('sidebarBlockHeight').textContent = meta.height || '-';
+            document.getElementById('sidebarTxCount').textContent = meta.tx_count || '-';
+        }
+        
         let totalBtc = 0;
         if (storedTransactions && storedTransactions.length > 0) {
             storedTransactions.forEach(tx => {
@@ -933,6 +1173,9 @@
     // Sound effects
     let soundEnabled = false;
     let sounds = {};
+    
+    // Invulnerability flag
+    let invulnerable = false;
     
     // Map value function - missing in original
     function mapValue(value, fromLow, fromHigh, toLow, toHigh) {
@@ -1454,35 +1697,30 @@
             keys[e.code] = false;
         });
         
-        // Mobile controls setup
+        // Mobile controls setup - improved with joystick
         setupMobileControls();
+        
+        // Sidebar toggle setup
+        setupSidebar();
     }
     
-    // Setup mobile controls
+    // Setup mobile controls with joystick
     function setupMobileControls() {
         // Detect mobile device
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (isMobile) {
             document.getElementById('mobileControls').style.display = 'block';
+            document.getElementById('instructions').innerHTML = '<b>Use joystick</b> to drive. Tap buttons to Jump, Boost, Drift, and Shoot!';
             
-            // Directional pad
-            const upButton = document.querySelector('.button-up');
-            const leftButton = document.querySelector('.button-left');
-            const rightButton = document.querySelector('.button-right');
-            const downButton = document.querySelector('.button-down');
+            // Joystick setup
+            setupJoystick();
             
             // Action buttons
             const boostButton = document.getElementById('actionBoost');
             const jumpButton = document.getElementById('actionJump');
             const driftButton = document.getElementById('actionDrift');
             const shootButton = document.getElementById('actionShoot');
-            
-            // Setup touch events for directional buttons
-            setupTouchControl(upButton, () => { keys['ArrowUp'] = true; }, () => { keys['ArrowUp'] = false; });
-            setupTouchControl(leftButton, () => { keys['ArrowLeft'] = true; }, () => { keys['ArrowLeft'] = false; });
-            setupTouchControl(rightButton, () => { keys['ArrowRight'] = true; }, () => { keys['ArrowRight'] = false; });
-            setupTouchControl(downButton, () => { keys['ArrowDown'] = true; }, () => { keys['ArrowDown'] = false; });
             
             // Setup touch events for action buttons
             setupTouchControl(boostButton, () => { keys['ShiftLeft'] = true; }, () => { keys['ShiftLeft'] = false; });
@@ -1536,6 +1774,215 @@
                 }
             });
         }
+    }
+    
+    // Setup joystick controls
+    function setupJoystick() {
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickHandle = document.getElementById('joystickHandle');
+        let isDragging = false;
+        
+        // Center position of container and handle
+        const containerRect = joystickContainer.getBoundingClientRect();
+        const containerCenterX = containerRect.width / 2;
+        const containerCenterY = containerRect.height / 2;
+        
+        // Maximum distance handle can move from center
+        const maxDistance = containerRect.width / 2 - joystickHandle.offsetWidth / 2;
+        
+        // Reset handle position to center
+        function resetHandle() {
+            joystickHandle.style.left = `${containerCenterX - joystickHandle.offsetWidth / 2}px`;
+            joystickHandle.style.top = `${containerCenterY - joystickHandle.offsetHeight / 2}px`;
+            // Reset directional keys
+            keys['ArrowUp'] = false;
+            keys['ArrowDown'] = false;
+            keys['ArrowLeft'] = false;
+            keys['ArrowRight'] = false;
+        }
+        
+        // Handle touch start
+        joystickContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            updateJoystickPosition(e.touches[0]);
+        });
+        
+        // Handle touch move
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                updateJoystickPosition(e.touches[0]);
+            }
+        }, { passive: false });
+        
+        // Handle touch end
+        document.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+                resetHandle();
+            }
+        });
+        
+        document.addEventListener('touchcancel', () => {
+            if (isDragging) {
+                isDragging = false;
+                resetHandle();
+            }
+        });
+        
+        // Update joystick position and control state
+        function updateJoystickPosition(touch) {
+            const containerRect = joystickContainer.getBoundingClientRect();
+            
+            // Calculate distance from center
+            const touchX = touch.clientX - containerRect.left;
+            const touchY = touch.clientY - containerRect.top;
+            
+            // Calculate displacement from center
+            const deltaX = touchX - containerCenterX;
+            const deltaY = touchY - containerCenterY;
+            
+            // Calculate distance from center
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Normalize direction
+            const normalizedX = deltaX / distance;
+            const normalizedY = deltaY / distance;
+            
+            // Limit distance to max radius
+            const limitedDistance = Math.min(distance, maxDistance);
+            
+            // Calculate new position
+            const newX = containerCenterX + normalizedX * limitedDistance;
+            const newY = containerCenterY + normalizedY * limitedDistance;
+            
+            // Update handle position
+            joystickHandle.style.left = `${newX - joystickHandle.offsetWidth / 2}px`;
+            joystickHandle.style.top = `${newY - joystickHandle.offsetHeight / 2}px`;
+            
+            // Update direction keys based on joystick position
+            // Use thresholds for each direction
+            const threshold = 0.3; // Threshold for triggering direction
+            
+            keys['ArrowUp'] = normalizedY < -threshold;
+            keys['ArrowDown'] = normalizedY > threshold;
+            keys['ArrowLeft'] = normalizedX < -threshold;
+            keys['ArrowRight'] = normalizedX > threshold;
+            
+            // Scale car speed based on forward/backward intensity
+            if (keys['ArrowUp']) {
+                // Map the Y displacement to speed intensity (0 to 1)
+                const intensity = Math.min(Math.abs(normalizedY), 1);
+                carMaxSpeed = 2.5 * (0.5 + 0.5 * intensity); // Scale between 50-100% of max speed
+            }
+        }
+        
+        // Initialize handle at center
+        resetHandle();
+    }
+    
+    // Setup sidebar toggle and organize mobile elements
+    function setupSidebar() {
+        const sidebar = document.getElementById('gameSidebar');
+        const sidebarToggle = document.getElementById('gameSidebarToggle');
+        
+        // Set initial state
+        let sidebarOpen = false;
+        
+        // For mobile, move elements into sidebar
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            // Move minimap to sidebar
+            const minimap = document.getElementById('minimap');
+            const sidebarMinimap = document.getElementById('sidebarMinimap');
+            if (minimap && sidebarMinimap) {
+                sidebarMinimap.appendChild(minimap);
+            }
+            
+            // Move name input to sidebar
+            const nameInput = document.getElementById('nameInputContainer');
+            const sidebarNameInput = document.getElementById('sidebarNameInput');
+            if (nameInput && sidebarNameInput) {
+                sidebarNameInput.appendChild(nameInput);
+            }
+            
+            // Setup sidebar block form
+            const sidebarBlockForm = document.getElementById('sidebarBlockForm');
+            if (sidebarBlockForm) {
+                sidebarBlockForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const blockHash = document.getElementById('sidebarBlockHash').value.trim();
+                    if (!blockHash) return;
+                    joinOrCreateRoom(blockHash);
+                    
+                    // Close sidebar after submission
+                    sidebar.style.right = isMobile ? '-80%' : '-280px';
+                    sidebarToggle.textContent = '≡';
+                    sidebarOpen = false;
+                });
+            }
+        }
+        
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', () => {
+            if (sidebarOpen) {
+                sidebar.style.right = isMobile ? '-80%' : '-280px';
+                sidebarToggle.textContent = '≡';
+            } else {
+                sidebar.style.right = '0';
+                sidebarToggle.textContent = '×';
+                
+                // Sync block info to sidebar
+                if (isMobile && blockMetadata) {
+                    document.getElementById('sidebarBlockHeight').textContent = blockMetadata.height || '-';
+                    document.getElementById('sidebarTxCount').textContent = blockMetadata.tx_count || '-';
+                    document.getElementById('sidebarBlockHash').value = document.getElementById('blockHash').value;
+                }
+                
+                // Update player count in sidebar when opened
+                document.getElementById('playerCountSidebar').textContent = 
+                    Object.keys(otherPlayers).length + 1;
+                
+                // Sync player list to sidebar when opened
+                syncPlayersListToSidebar();
+            }
+            sidebarOpen = !sidebarOpen;
+        });
+        
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (sidebarOpen && 
+                e.target !== sidebar && 
+                !sidebar.contains(e.target) && 
+                e.target !== sidebarToggle) {
+                sidebar.style.right = isMobile ? '-80%' : '-280px';
+                sidebarToggle.textContent = '≡';
+                sidebarOpen = false;
+            }
+        });
+    }
+    
+    // Sync players list to sidebar
+    function syncPlayersListToSidebar() {
+        const sidebarList = document.getElementById('playersListSidebar');
+        if (!sidebarList) return;
+        
+        sidebarList.innerHTML = '<p><strong>Players:</strong></p>';
+        
+        // Add yourself
+        const selfItem = document.createElement('div');
+        selfItem.textContent = playerName + (isHost ? ' (Host)' : '');
+        selfItem.style.color = playerColor;
+        sidebarList.appendChild(selfItem);
+        
+        // Add other players
+        Object.keys(otherPlayers).forEach(id => {
+            const playerItem = document.createElement('div');
+            playerItem.textContent = otherPlayers[id].name || id.substring(0, 8) + '...';
+            playerItem.style.color = otherPlayers[id].color;
+            sidebarList.appendChild(playerItem);
+        });
     }
     
     // Helper for mobile touch controls
@@ -1610,6 +2057,108 @@
         
         // Play sound
         playSound('restart');
+    }
+    
+    // Add track details (barriers, decorations) at intervals
+    function addTrackDetail(position, rotation) {
+        // Add some random track details like barriers or decorations
+        const detailTypes = ['barrier', 'pillar', 'light'];
+        const detailType = detailTypes[Math.floor(Math.random() * detailTypes.length)];
+        
+        switch(detailType) {
+            case 'barrier':
+                // Create a simple barrier
+                const barrierGeo = new THREE.BoxGeometry(1, 1, 3);
+                const barrierMat = new THREE.MeshPhongMaterial({
+                    color: 0xdddddd,
+                    shininess: 50
+                });
+                const barrier = new THREE.Mesh(barrierGeo, barrierMat);
+                
+                // Position at side of track
+                const sideOffset = trackWidth/2 + 1;
+                barrier.position.set(
+                    position.x + Math.sin(rotation + Math.PI/2) * sideOffset,
+                    position.y + 0.5,
+                    position.z + Math.cos(rotation + Math.PI/2) * sideOffset
+                );
+                barrier.rotation.y = rotation;
+                
+                // Add stripe
+                const stripeGeo = new THREE.BoxGeometry(1.1, 0.2, 3.1);
+                const stripeMat = new THREE.MeshPhongMaterial({
+                    color: 0xff0000,
+                    shininess: 80
+                });
+                const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                stripe.position.y = 0.2;
+                barrier.add(stripe);
+                
+                scene.add(barrier);
+                break;
+                
+            case 'pillar':
+                // Create a column/pillar
+                const pillarGeo = new THREE.CylinderGeometry(0.5, 0.7, 5, 8);
+                const pillarMat = new THREE.MeshPhongMaterial({
+                    color: 0x888888,
+                    shininess: 60
+                });
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                
+                // Position at side of track
+                const pillarOffset = trackWidth/2 + 3;
+                pillar.position.set(
+                    position.x + Math.sin(rotation + Math.PI/2) * pillarOffset,
+                    position.y + 2.5,
+                    position.z + Math.cos(rotation + Math.PI/2) * pillarOffset
+                );
+                
+                // Add a cap
+                const capGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.3, 8);
+                const capMat = new THREE.MeshPhongMaterial({
+                    color: 0x666666,
+                    shininess: 70
+                });
+                const cap = new THREE.Mesh(capGeo, capMat);
+                cap.position.y = 2.5;
+                pillar.add(cap);
+                
+                scene.add(pillar);
+                break;
+                
+            case 'light':
+                // Create a light post
+                const postGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 6);
+                const postMat = new THREE.MeshPhongMaterial({
+                    color: 0x333333,
+                    shininess: 40
+                });
+                const post = new THREE.Mesh(postGeo, postMat);
+                
+                // Position at side of track
+                const postOffset = trackWidth/2 + 2;
+                post.position.set(
+                    position.x + Math.sin(rotation + Math.PI/2) * postOffset,
+                    position.y + 3,
+                    position.z + Math.cos(rotation + Math.PI/2) * postOffset
+                );
+                
+                // Add a light
+                const lightGeo = new THREE.SphereGeometry(0.5, 8, 8);
+                const lightMat = new THREE.MeshPhongMaterial({ 
+                    color: 0xffff00,
+                    emissive: 0xffff00,
+                    emissiveIntensity: 0.5,
+                    shininess: 90
+                });
+                const lightBulb = new THREE.Mesh(lightGeo, lightMat);
+                lightBulb.position.y = 3;
+                post.add(lightBulb);
+                
+                scene.add(post);
+                break;
+        }
     }
     
     // Collectible items implementation
@@ -2464,10 +3013,6 @@
             document.getElementById('fpsCounter').textContent = 'FPS: ' + fps;
             document.getElementById('fpsCounter').style.display = gameSettings.showFps ? 'block' : 'none';
             
-            // Reset counters
-            fpsCounter.frames = 0;
-            fpsCounter.lastTime = now;
-            
             // Auto-adjust quality if FPS is too low
             if (gameSettings.quality !== 'low' && fps < 30) {
                 const currentQuality = gameSettings.quality;
@@ -2671,108 +3216,6 @@
         // Remove existing listener to prevent duplicates
         startRaceButton.removeEventListener('click', startRace);
         startRaceButton.addEventListener('click', startRace);
-    }
-
-    // Add track details (barriers, decorations) at intervals
-    function addTrackDetail(position, rotation) {
-        // Add some random track details like barriers or decorations
-        const detailTypes = ['barrier', 'pillar', 'light'];
-        const detailType = detailTypes[Math.floor(Math.random() * detailTypes.length)];
-        
-        switch(detailType) {
-            case 'barrier':
-                // Create a simple barrier
-                const barrierGeo = new THREE.BoxGeometry(1, 1, 3);
-                const barrierMat = new THREE.MeshPhongMaterial({
-                    color: 0xdddddd,
-                    shininess: 50
-                });
-                const barrier = new THREE.Mesh(barrierGeo, barrierMat);
-                
-                // Position at side of track
-                const sideOffset = trackWidth/2 + 1;
-                barrier.position.set(
-                    position.x + Math.sin(rotation + Math.PI/2) * sideOffset,
-                    position.y + 0.5,
-                    position.z + Math.cos(rotation + Math.PI/2) * sideOffset
-                );
-                barrier.rotation.y = rotation;
-                
-                // Add stripe
-                const stripeGeo = new THREE.BoxGeometry(1.1, 0.2, 3.1);
-                const stripeMat = new THREE.MeshPhongMaterial({
-                    color: 0xff0000,
-                    shininess: 80
-                });
-                const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-                stripe.position.y = 0.2;
-                barrier.add(stripe);
-                
-                scene.add(barrier);
-                break;
-                
-            case 'pillar':
-                // Create a column/pillar
-                const pillarGeo = new THREE.CylinderGeometry(0.5, 0.7, 5, 8);
-                const pillarMat = new THREE.MeshPhongMaterial({
-                    color: 0x888888,
-                    shininess: 60
-                });
-                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-                
-                // Position at side of track
-                const pillarOffset = trackWidth/2 + 3;
-                pillar.position.set(
-                    position.x + Math.sin(rotation + Math.PI/2) * pillarOffset,
-                    position.y + 2.5,
-                    position.z + Math.cos(rotation + Math.PI/2) * pillarOffset
-                );
-                
-                // Add a cap
-                const capGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.3, 8);
-                const capMat = new THREE.MeshPhongMaterial({
-                    color: 0x666666,
-                    shininess: 70
-                });
-                const cap = new THREE.Mesh(capGeo, capMat);
-                cap.position.y = 2.5;
-                pillar.add(cap);
-                
-                scene.add(pillar);
-                break;
-                
-            case 'light':
-                // Create a light post
-                const postGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 6);
-                const postMat = new THREE.MeshPhongMaterial({
-                    color: 0x333333,
-                    shininess: 40
-                });
-                const post = new THREE.Mesh(postGeo, postMat);
-                
-                // Position at side of track
-                const postOffset = trackWidth/2 + 2;
-                post.position.set(
-                    position.x + Math.sin(rotation + Math.PI/2) * postOffset,
-                    position.y + 3,
-                    position.z + Math.cos(rotation + Math.PI/2) * postOffset
-                );
-                
-                // Add a light
-                const lightGeo = new THREE.SphereGeometry(0.5, 8, 8);
-                const lightMat = new THREE.MeshPhongMaterial({ 
-                    color: 0xffff00,
-                    emissive: 0xffff00,
-                    emissiveIntensity: 0.5,
-                    shininess: 90
-                });
-                const lightBulb = new THREE.Mesh(lightGeo, lightMat);
-                lightBulb.position.y = 3;
-                post.add(lightBulb);
-                
-                scene.add(post);
-                break;
-        }
     }
 
     function handleConnection(conn) {
@@ -3023,6 +3466,23 @@
         
         // Update player count in race controls
         document.getElementById('playerCount').textContent = Object.keys(otherPlayers).length + 1;
+        
+        // Also update sidebar player count if it exists
+        if (document.getElementById('playerCountSidebar')) {
+            document.getElementById('playerCountSidebar').textContent = Object.keys(otherPlayers).length + 1;
+        }
+        
+        // Update sidebar player list
+        syncPlayersListToSidebar();
+    }
+
+    function updatePlayerCount() {
+        if (document.getElementById('playerCount')) {
+            document.getElementById('playerCount').textContent = Object.keys(otherPlayers).length + 1;
+        }
+        if (document.getElementById('playerCountSidebar')) {
+            document.getElementById('playerCountSidebar').textContent = Object.keys(otherPlayers).length + 1;
+        }
     }
 
     // --- Minimap Implementation ---
@@ -3688,6 +4148,7 @@
                 // Prevent clicking on current room
                 if (cachedBlockHash !== room.id) {
                     document.getElementById('blockHash').value = room.id;
+                    document.getElementById('sidebarBlockHash').value = room.id;
                     joinOrCreateRoom(room.id);
                 }
             });
@@ -3717,6 +4178,7 @@
                 const randomBlock = await fetchLatestBlockInfo();
                 if (randomBlock) {
                     document.getElementById('blockHash').value = randomBlock;
+                    document.getElementById('sidebarBlockHash').value = randomBlock;
                     joinOrCreateRoom(randomBlock);
                 }
             } catch (e) {
@@ -4101,7 +4563,8 @@
         sounds = {
             shoot: createSound('data:audio/wav;base64,UklGRtwAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YbgAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIBFqv6XQ8vFfEDWzHQ79ddlMvTiUCnq9D4g4QI0F9UiKw3RQiML2mkhCu6SGQ4JlxEdI6IgIzasMCdIsEEmV7FNJGasTSJrqEgfdJNCGnt/PBSCcy0Oh1kfCY44EQWRGgQBkv4A/pHxAP2O6QH2idwE843QCv2LyhH9'),
             collect: createSound('data:audio/wav;base64,UklGRqQDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YYADAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgID///////////////////////////9/f39/f39/f39/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAQEBAQEBAQEBAQEBAQEBAQEBAQED///////////////////////////////////////////9/f39/f39/f39/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAQEBAQEBAQEBAQEBAQEBAQEBAQED///////////////////////////////////////////9/f39/f39/f39/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAQEBAQEBAQEBAQEBAQEBAQEBAQEA/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/P39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgEBAQEBAQEBAQEBAQEBAQEBAQEBAQD8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz9/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgIBAQEBAQEBAQEBAQEBAQEBAQEBAQD8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/f39/f39/f39/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAQEBAQEBAQEBAQEBAQEBAQEBAQEA/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/P39/f39/f39/f39/f39/f39/f39/gICAgICAgICAgICAgICAgICAgH9/f39/f39/f39/f39/f39/f39/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz9/f39/f39/f39/f39/f39/f39/f4CAgICAgICAgICAgICAgICAgIB/f39/f39/f39/f39/f39/f39/fz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/f39/f39/f39/f39/f39/f39/f3+AgICAgICAgICAgICAgICAgICAf39/f39/f39/f39/f39/f39/f38/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pw=='),
-            jump: createSound('data:audio/wav;base64,UklGRiwBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAAB+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fX19e3t7eHh4dHR0cHBwbGxsaGhoZGRkYGBgXFxcWFhYVFRUUFBQTExMSEhIREREQEBAPDw8ODg4NDQ0MDAwLCwsKCgoJCQkICAgHBwcGBgYFBQUEBAQDAwMCAgIBQUFAQEBAQEBBQUFCAgIDAwMEBAQFBQUGBgYHBwcICAgJCQkKCgoLCwsMDAwNDQ0ODg4PDw8QEBARERESEhITExMUFBQVFRUWFhYXFxcYGBgZGRkaGhobGxscHBwdHR0eHh4e3t7fX19fn5+fX19e3t7eHh4dHR0cHBwbGxsaGhoZGRkYGBgXFxcWFhYVFRUUFBQTExMSEhIRERE'),
+            
+jump: createSound('data:audio/wav;base64,UklGRiwBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQBAAB+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fX19e3t7eHh4dHR0cHBwbGxsaGhoZGRkYGBgXFxcWFhYVFRUUFBQTExMSEhIREREQEBAPDw8ODg4NDQ0MDAwLCwsKCgoJCQkICAgHBwcGBgYFBQUEBAQDAwMCAgIBQUFAQEBAQEBBQUFCAgIDAwMEBAQFBQUGBgYHBwcICAgJCQkKCgoLCwsMDAwNDQ0ODg4PDw8QEBARERESEhITExMUFBQVFRUWFhYXFxcYGBgZGRkaGhobGxscHBwdHR0eHh4e3t7fX19fn5+fX19e3t7eHh4dHR0cHBwbGxsaGhoZGRkYGBgXFxcWFhYVFRUUFBQTExMSEhIRERE'),
             hit: createSound('data:audio/wav;base64,UklGRpAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIAAAB/f35+fXx7ent5eHd3dnV0c3JycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozs7Ozs7PDw9PT4/QEBCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5+f4A='),
             impact: createSound('data:audio/wav;base64,UklGRrAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YZQAAAB/f3p6dXVwcGtramZmYWFcXFhYU1NPT0tLSEhGRkREQ0NEREVFRkZISElJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlKSkpKSkpLS0xMTU1OTk9PUFBSUlRUVlZYWFpaXFxeXmBgYmJkZGZmaGhqam1tb29xcXNzdHV2d3h5ent8fH1+f4CAgA=='),
             connected: createSound('data:audio/wav;base64,UklGRrAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YZQAAAB/f4GBg4OFhYeHiYmLi42Nj4+RkZOTlZWXl5mZm5uenqCgpKSoqKystrS0rqyopqSioqCgnpyampiWlJKQjo2LiYeGhIKAgH5+fHx6enp6enp6fHx+foCAgIKChIaGiImLi42PkZGTlZeXmZudnaGhpaWpqa2tsLC0tLi4vLzAwMTEyMjQ0NTU2Nja3N7g4OTk6A=='),
@@ -4149,42 +4612,6 @@
         }
     }
 
-    // --- UI and Startup ---
-    function setupEventListeners() {
-        document.getElementById('blockForm').onsubmit = function(e) {
-            e.preventDefault();
-            const blockHash = document.getElementById('blockHash').value.trim();
-            if (!blockHash) return;
-            joinOrCreateRoom(blockHash);
-        };
-        
-        document.getElementById('restartGame').addEventListener('click', restartGame);
-        
-        // Update player name button
-        document.getElementById('updateNameButton').addEventListener('click', function() {
-            updatePlayerName();
-        });
-        
-        // Refresh rooms button
-        document.getElementById('refreshRooms').addEventListener('click', function() {
-            updateRoomsList();
-        });
-        
-        // Settings toggle
-        document.getElementById('settingsToggle').addEventListener('click', function() {
-            const panel = document.getElementById('settingsPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        // Save settings button
-        document.getElementById('saveSettings').addEventListener('click', function() {
-            saveSettings();
-        });
-        
-        // Setup keyboard controls
-        setupControls();
-    }
-    
     function updatePlayerName() {
         const nameInput = document.getElementById('playerName');
         const newName = nameInput.value.trim();
@@ -4296,6 +4723,41 @@
         document.getElementById('fpsCounter').style.display = gameSettings.showFps ? 'block' : 'none';
     }
 
+    function setupEventListeners() {
+        document.getElementById('blockForm').onsubmit = function(e) {
+            e.preventDefault();
+            const blockHash = document.getElementById('blockHash').value.trim();
+            if (!blockHash) return;
+            joinOrCreateRoom(blockHash);
+        };
+        
+        document.getElementById('restartGame').addEventListener('click', restartGame);
+        
+        // Update player name button
+        document.getElementById('updateNameButton').addEventListener('click', function() {
+            updatePlayerName();
+        });
+        
+        // Refresh rooms button
+        document.getElementById('refreshRooms').addEventListener('click', function() {
+            updateRoomsList();
+        });
+        
+        // Settings toggle
+        document.getElementById('settingsToggle').addEventListener('click', function() {
+            const panel = document.getElementById('settingsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Save settings button
+        document.getElementById('saveSettings').addEventListener('click', function() {
+            saveSettings();
+        });
+        
+        // Setup keyboard controls
+        setupControls();
+    }
+    
     window.onload = function() {
         initThreeJS();
         updateGameUI();
@@ -4315,18 +4777,42 @@
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile) {
             document.getElementById('mobileControls').style.display = 'block';
-            document.getElementById('instructions').innerHTML = '<b>Use on-screen controls</b> to drive. Tap to Jump, Boost, Drift, and Shoot!';
+            document.getElementById('instructions').innerHTML = '<b>Use joystick</b> to drive. Tap buttons to Jump, Boost, Drift, and Shoot!';
+            
+            // Make sure sidebar block hash is synced with main one
+            document.getElementById('sidebarBlockHash').value = document.getElementById('blockHash').value;
+            
+            // Open sidebar once initially for first-time mobile users to see controls
+            setTimeout(() => {
+                const gameSidebarToggle = document.getElementById('gameSidebarToggle');
+                if (gameSidebarToggle && localStorage.getItem('mobileInfoShown') !== 'true') {
+                    gameSidebarToggle.click();
+                    localStorage.setItem('mobileInfoShown', 'true');
+                    
+                    // Auto-close after 3 seconds
+                    setTimeout(() => {
+                        gameSidebarToggle.click();
+                    }, 3000);
+                }
+            }, 2000);
         }
         
         // Fetch latest block more robustly
         fetchLatestBlockInfo().then(block => {
             if (block) {
+                // Update sidebar block hash too
+                if (document.getElementById('sidebarBlockHash')) {
+                    document.getElementById('sidebarBlockHash').value = block;
+                }
                 animate(); // Start animation after block is loaded
                 joinOrCreateRoom(block); // Join game with latest block
             } else {
                 // Use a default block if all else fails
                 const defaultBlock = '783000';
                 document.getElementById('blockHash').value = defaultBlock;
+                if (document.getElementById('sidebarBlockHash')) {
+                    document.getElementById('sidebarBlockHash').value = defaultBlock;
+                }
                 animate();
                 joinOrCreateRoom(defaultBlock);
             }
@@ -4335,6 +4821,9 @@
             // Fallback to default block
             const defaultBlock = '783000';
             document.getElementById('blockHash').value = defaultBlock;
+            if (document.getElementById('sidebarBlockHash')) {
+                document.getElementById('sidebarBlockHash').value = defaultBlock;
+            }
             animate();
             joinOrCreateRoom(defaultBlock);
         });
