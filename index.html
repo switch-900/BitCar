@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Modified meta viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3DBitmap Driving Game</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
     <style>
@@ -106,6 +107,17 @@
             border-radius: 4px;
             overflow: hidden;
             z-index: 10;
+        }
+        
+        /* Mobile minimap positioning and size */
+        @media (max-width: 767px) {
+            #minimap {
+            top: 70px; /* Position below the top UI bar */
+            right: 10px;
+            bottom: auto; /* Override bottom positioning */
+            width: 120px; /* Make it smaller */
+            height: 120px;
+            }
         }
         .otherPlayerMarker {
             position: absolute;
@@ -476,6 +488,28 @@
             max-height: 300px;
             overflow-y: auto;
         }
+
+        /* Mobile optimized positioning and size */
+        @media (max-width: 767px) {
+            #availableRooms {
+                top: 0px;
+                left: 1px;
+                width: 140px;
+                max-height: 180px;
+                font-size: 0.85em;
+                padding: 8px;
+            }
+            
+            #availableRooms h3 {
+                font-size: 0.95em;
+                margin-bottom: 5px;
+            }
+            
+            .room-item {
+                padding: 5px;
+                margin: 3px 0;
+            }
+        }
         
         .room-item {
             display: flex;
@@ -719,6 +753,7 @@
         <div id="actionButtons">
             <div class="action-row">
                 <div class="control-button" id="actionBoost">💨</div>
+                <div class="control-button" id="actionJump">↑</div>
             </div>
             <div class="action-row">
                 <div class="control-button" id="actionDrift">↺</div>
@@ -986,8 +1021,10 @@
     // --- ThreeJS Initialization ---
     function initThreeJS() {
         scene = new THREE.Scene();
-        createCosmicBackground();    // ← add cosmic starfield immediately
-        
+        scene.background = new THREE.Color(0x000000); // Black background for better contrast
+        scene.fog = new THREE.Fog(0x000000, 0, 1000); // Default fog for low quality
+
+
         // Fog for distance effect based on quality setting
         if (gameSettings.quality !== 'low') {
             scene.fog = new THREE.FogExp2(0x000000, 0.01);
@@ -1034,165 +1071,7 @@
         initSharedGeometries();
     }
     
-    // Add cosmic background starfield
-    function createCosmicBackground() {
-        // Create a celestial skybox first (large sphere with stars on inside)
-        const skyGeometry = new THREE.SphereGeometry(1000, 32, 32);
-        const skyMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000010,  // Very dark blue instead of black
-            side: THREE.BackSide,  // Draw on inside of sphere
-        });
-        const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-        scene.add(sky);
 
-        // Add bright, visible stars (closer and larger)
-        addStarLayer(3000, 800, 4, 0xffffff);  // White stars
-        addStarLayer(2000, 700, 3, 0xaaccff);  // Blue-tinted stars
-        addStarLayer(1000, 600, 5, 0xffddaa);  // Yellow/orange stars
-        
-        // Add a few glowing nebulae for color and depth
-        addNebula(0xff3300, 500, new THREE.Vector3(-400, 200, -400));
-        addNebula(0x3366ff, 600, new THREE.Vector3(500, -100, -500));
-        
-        // Add a large, central galaxy
-        addGalaxyDisc(new THREE.Vector3(0, -200, -800), 300, 0x9966ff);
-        
-        // This nebula function creates a simple colored cloud
-        function addNebula(color, size, position) {
-            // Create a simple, flat particle system for the nebula
-            const nebulaParticles = new THREE.BufferGeometry();
-            const particleCount = 100;
-            
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
-            
-            const baseColor = new THREE.Color(color);
-            
-            for (let i = 0; i < particleCount; i++) {
-                // Position within a disc shape
-                const angle = Math.random() * Math.PI * 2;
-                const radius = Math.random() * size;
-                const x = Math.cos(angle) * radius;
-                const y = (Math.random() - 0.5) * (size * 0.2);
-                const z = Math.sin(angle) * radius;
-                
-                positions[i * 3] = x + position.x;
-                positions[i * 3 + 1] = y + position.y;
-                positions[i * 3 + 2] = z + position.z;
-                
-                // Vary the color slightly
-                const colorVariance = 0.2;
-                colors[i * 3] = baseColor.r * (1 - colorVariance + Math.random() * colorVariance);
-                colors[i * 3 + 1] = baseColor.g * (1 - colorVariance + Math.random() * colorVariance);
-                colors[i * 3 + 2] = baseColor.b * (1 - colorVariance + Math.random() * colorVariance);
-                
-                // Vary sizes
-                sizes[i] = 30 + Math.random() * 40;
-            }
-            
-            nebulaParticles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            nebulaParticles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            nebulaParticles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            
-            const nebulaMaterial = new THREE.PointsMaterial({
-                size: 30,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.4,
-                blending: THREE.AdditiveBlending,
-            });
-            
-            const nebula = new THREE.Points(nebulaParticles, nebulaMaterial);
-            scene.add(nebula);
-        }
-        
-        // Create a star layer with specific parameters
-        function addStarLayer(count, distance, size, color) {
-            const starGeometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            
-            for (let i = 0; i < count; i++) {
-                // Calculate random position on a sphere
-                const theta = Math.random() * 2 * Math.PI;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const r = distance * (0.9 + Math.random() * 0.1); // Keep them at similar distance
-                
-                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                positions[i * 3 + 2] = r * Math.cos(phi);
-            }
-            
-            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            
-            const starMaterial = new THREE.PointsMaterial({
-                color: color,
-                size: size,
-                sizeAttenuation: true
-            });
-            
-            const stars = new THREE.Points(starGeometry, starMaterial);
-            scene.add(stars);
-        }
-        
-        // Add a galaxy disc (spiral galaxy)
-        function addGalaxyDisc(center, radius, color) {
-            const galaxyGeometry = new THREE.BufferGeometry();
-            const particleCount = 5000;
-            
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
-            
-            const galaxyColor = new THREE.Color(color);
-            const coreColor = new THREE.Color(0xffffff);
-            
-            for (let i = 0; i < particleCount; i++) {
-                // Spiral distribution
-                const angle = Math.random() * Math.PI * 20; // Many rotations for spiral
-                const distance = Math.pow(Math.random(), 0.5) * radius; // More stars toward center
-                
-                // Add spiral arms by modulating the height based on angle
-                const armHeight = 5 * Math.sin(angle * 4) * (distance / radius);
-                
-                positions[i * 3] = center.x + Math.cos(angle) * distance;
-                positions[i * 3 + 1] = center.y + armHeight;
-                positions[i * 3 + 2] = center.z + Math.sin(angle) * distance;
-                
-                // Color varies from core (white) to edge (galaxy color)
-                const colorMix = distance / radius;
-                const starColor = new THREE.Color().lerpColors(coreColor, galaxyColor, colorMix);
-                
-                colors[i * 3] = starColor.r;
-                colors[i * 3 + 1] = starColor.g;
-                colors[i * 3 + 2] = starColor.b;
-                
-                // Size decreases from core to edge
-                sizes[i] = 4 * (1 - (distance / radius) * 0.8);
-            }
-            
-            galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            galaxyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            galaxyGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            
-            const galaxyMaterial = new THREE.PointsMaterial({
-                size: 3,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending
-            });
-            
-            const galaxy = new THREE.Points(galaxyGeometry, galaxyMaterial);
-            scene.add(galaxy);
-            
-            // Add bright core
-            const coreLight = new THREE.PointLight(0xffffff, 0.2, 500);
-            coreLight.position.copy(center);
-            scene.add(coreLight);
-        }
-    }
-    
     // Initialize reusable geometries for performance
     function initSharedGeometries() {
         // Car geometry
@@ -1204,8 +1083,7 @@
         // Collectibles
         sharedGeometries.collectibleTorus = new THREE.TorusGeometry(1, 0.3, 8, 16);
         sharedGeometries.collectibleSphere = new THREE.SphereGeometry(0.7, 8, 8);
-        sharedGeometries.collectibleRing = new THREE.RingGeometry(1.2, 1.5, 16);
-        
+        sharedGeometries.collectibleRing = new THREE.RingGeometry(1.2, 1.6, 16);
         // Laser
         sharedGeometries.laser = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
         
@@ -1598,108 +1476,315 @@
         
         // Mobile controls setup
         setupMobileControls();
-    }
-    
-    // Setup mobile controls
-    function setupMobileControls() {
-        // Detect mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            document.getElementById('mobileControls').style.display = 'block';
+        }
+        // Setup mobile controls with joysticks
+        function setupMobileControls() {
+            // Detect mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            // Directional pad
-            const upButton = document.querySelector('.button-up');
-            const leftButton = document.querySelector('.button-left');
-            const rightButton = document.querySelector('.button-right');
-            const downButton = document.querySelector('.button-down');
-            
-            // Action buttons
-            const boostButton = document.getElementById('actionBoost');
-            const jumpButton = document.getElementById('actionJump');
-            const driftButton = document.getElementById('actionDrift');
-            const shootButton = document.getElementById('actionShoot');
-            
-            // Setup touch events for directional buttons
-            setupTouchControl(upButton, () => { keys['ArrowUp'] = true; }, () => { keys['ArrowUp'] = false; });
-            setupTouchControl(leftButton, () => { keys['ArrowLeft'] = true; }, () => { keys['ArrowLeft'] = false; });
-            setupTouchControl(rightButton, () => { keys['ArrowRight'] = true; }, () => { keys['ArrowRight'] = false; });
-            setupTouchControl(downButton, () => { keys['ArrowDown'] = true; }, () => { keys['ArrowDown'] = false; });
-            
-            // Setup touch events for action buttons
-            setupTouchControl(boostButton, () => { keys['ShiftLeft'] = true; }, () => { keys['ShiftLeft'] = false; });
-            setupTouchControl(jumpButton, () => { keys['Space'] = true; }, () => { keys['Space'] = false; });
-            
-            // Drift button toggles drift mode
-            driftButton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                keys['KeyD'] = !keys['KeyD'];
-                if (keys['KeyD']) {
-                    driftButton.classList.add('active');
-                } else {
-                    driftButton.classList.remove('active');
+            if (isMobile) {
+                const mobileControls = document.getElementById('mobileControls');
+                if (mobileControls) mobileControls.style.display = 'block';
+                
+                // Create joystick elements
+                createJoystickElements();
+                
+                // Action buttons - check each element exists before attaching events
+                const boostButton = document.getElementById('actionBoost');
+                const jumpButton = document.getElementById('actionJump');
+                const driftButton = document.getElementById('actionDrift');
+                const shootButton = document.getElementById('actionShoot');
+                
+                // Setup touch events for action buttons with safety checks
+                if (boostButton) setupTouchControl(boostButton, () => { keys['ShiftLeft'] = true; }, () => { keys['ShiftLeft'] = false; });
+                if (jumpButton) setupTouchControl(jumpButton, () => { keys['Space'] = true; }, () => { keys['Space'] = false; });
+                
+                // Drift button with safety check
+                if (driftButton) {
+                    driftButton.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        keys['KeyD'] = !keys['KeyD'];
+                        driftButton.classList.toggle('active', keys['KeyD']);
+                        
+                        // Handle drift mode toggle
+                        driftFactor = driftFactor > 0 ? 0 : 0.03;
+                        const driftMsg = document.createElement('div');
+                        driftMsg.textContent = driftFactor > 0 ? 'DRIFT MODE: ON' : 'DRIFT MODE: OFF';
+                        driftMsg.style.position = 'absolute';
+                        driftMsg.style.bottom = '120px';
+                        driftMsg.style.left = '50%';
+                        driftMsg.style.transform = 'translateX(-50%)';
+                        driftMsg.style.color = '#ff00ff';
+                        driftMsg.style.fontSize = '1.5em';
+                        driftMsg.style.fontWeight = 'bold';
+                        driftMsg.style.zIndex = '15';
+                        driftMsg.style.background = 'rgba(0,0,0,0.5)';
+                        driftMsg.style.padding = '5px 15px';
+                        driftMsg.style.borderRadius = '10px';
+                        document.body.appendChild(driftMsg);
+                        setTimeout(() => document.body.removeChild(driftMsg), 1500);
+                    });
                 }
-                // Handle drift mode toggle
-                driftFactor = driftFactor > 0 ? 0 : 0.03;
-                const driftMsg = document.createElement('div');
-                driftMsg.textContent = driftFactor > 0 ? 'DRIFT MODE: ON' : 'DRIFT MODE: OFF';
-                driftMsg.style.position = 'absolute';
-                driftMsg.style.bottom = '120px';
-                driftMsg.style.left = '50%';
-                driftMsg.style.transform = 'translateX(-50%)';
-                driftMsg.style.color = '#ff00ff';
-                driftMsg.style.fontSize = '1.5em';
-                driftMsg.style.fontWeight = 'bold';
-                driftMsg.style.zIndex = '15';
-                driftMsg.style.background = 'rgba(0,0,0,0.5)';
-                driftMsg.style.padding = '5px 15px';
-                driftMsg.style.borderRadius = '10px';
-                document.body.appendChild(driftMsg);
-                setTimeout(() => document.body.removeChild(driftMsg), 1500);
+                
+                // Shoot button with safety check
+                if (shootButton) {
+                    setupTouchControl(shootButton, () => { 
+                        if (canShoot) {
+                            shootLaser();
+                            canShoot = false;
+                            
+                            // Update cooldown indicator with safety check
+                            const cooldownIndicator = document.getElementById('shootCooldown');
+                            if (cooldownIndicator) {
+                                cooldownIndicator.textContent = 'Reloading...';
+                                cooldownIndicator.classList.remove('ready');
+                                
+                                // Reset cooldown
+                                setTimeout(() => {
+                                    canShoot = true;
+                                    if (cooldownIndicator) {
+                                        cooldownIndicator.textContent = 'Shoot Ready';
+                                        cooldownIndicator.classList.add('ready');
+                                    }
+                                }, shootCooldown);
+                            }
+                        }
+                    });
+                }
+                
+                // Setup joystick functionality
+                setupJoystick();
+            }
+        }
+
+        // Create joystick UI elements
+        function createJoystickElements() {
+            // Remove the old directional pad
+            const directionalPad = document.getElementById('directionalPad');
+            if (directionalPad) {
+                directionalPad.parentNode.removeChild(directionalPad);
+            }
+            
+            // Create joystick container
+            const joystickContainer = document.createElement('div');
+            joystickContainer.id = 'joystickContainer';
+            joystickContainer.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                left: 30px;
+                width: 120px;
+                height: 120px;
+                background: rgba(0,0,0,0.3);
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.3);
+                z-index: 25;
+                touch-action: none;
+            `;
+            
+            // Create joystick handle
+            const joystickHandle = document.createElement('div');
+            joystickHandle.id = 'joystickHandle';
+            joystickHandle.style.cssText = `
+                position: absolute;
+                width: 60px;
+                height: 60px;
+                background: rgba(255,169,77,0.8);
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 0 10px rgba(255,169,77,0.5);
+                border: 2px solid rgba(255,255,255,0.7);
+            `;
+            
+            joystickContainer.appendChild(joystickHandle);
+            document.body.appendChild(joystickContainer);
+            
+            // Add instructions overlay for joystick
+            const joystickInstructions = document.createElement('div');
+            joystickInstructions.id = 'joystickInstructions';
+            joystickInstructions.textContent = "Move";
+            joystickInstructions.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 14px;
+                color: white;
+                font-weight: bold;
+                text-shadow: 0 0 5px rgba(0,0,0,0.8);
+                pointer-events: none;
+            `;
+            joystickContainer.appendChild(joystickInstructions);
+        }
+
+        // Setup joystick functionality
+        function setupJoystick() {
+            const joystickContainer = document.getElementById('joystickContainer');
+            const joystickHandle = document.getElementById('joystickHandle');
+            let joystickActive = false;
+            let joystickTouchId = null;
+            let joystickCenter = { x: 0, y: 0 };
+            let maxDistance = 40; // Maximum distance joystick can move from center
+            
+            // Get center position
+            function updateJoystickCenter() {
+                const rect = joystickContainer.getBoundingClientRect();
+                joystickCenter = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+            }
+            
+            // Update the joystick position and controls
+            function updateJoystickPosition(touchX, touchY) {
+                // Calculate distance from center
+                const deltaX = touchX - joystickCenter.x;
+                const deltaY = touchY - joystickCenter.y;
+                
+                // Calculate distance using Pythagorean theorem
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // Calculate normalized values (between -1 and 1)
+                let normalizedX = deltaX / maxDistance;
+                let normalizedY = deltaY / maxDistance;
+                
+                // Restrict movement to maxDistance
+                if (distance > maxDistance) {
+                    normalizedX = (deltaX / distance) * 1.0;
+                    normalizedY = (deltaY / distance) * 1.0;
+                    
+                    // Calculate constrained position
+                    const constrainedX = joystickCenter.x + normalizedX * maxDistance;
+                    const constrainedY = joystickCenter.y + normalizedY * maxDistance;
+                    
+                    // Update handle position
+                    joystickHandle.style.left = `${constrainedX - joystickCenter.x + joystickContainer.offsetWidth/2}px`;
+                    joystickHandle.style.top = `${constrainedY - joystickCenter.y + joystickContainer.offsetHeight/2}px`;
+                } else {
+                    // Within allowed distance, move freely
+                    joystickHandle.style.left = `${touchX - joystickCenter.x + joystickContainer.offsetWidth/2}px`;
+                    joystickHandle.style.top = `${touchY - joystickCenter.y + joystickContainer.offsetHeight/2}px`;
+                }
+                
+                // Apply to car controls - handle forward/backward movement
+                if (normalizedY < -0.3) {
+                    keys['ArrowUp'] = true;
+                    keys['ArrowDown'] = false;
+                } else if (normalizedY > 0.3) {
+                    keys['ArrowDown'] = true;
+                    keys['ArrowUp'] = false;
+                } else {
+                    keys['ArrowUp'] = false;
+                    keys['ArrowDown'] = false;
+                }
+                
+                // Handle left/right steering
+                if (normalizedX < -0.3) {
+                    keys['ArrowLeft'] = true;
+                    keys['ArrowRight'] = false;
+                } else if (normalizedX > 0.3) {
+                    keys['ArrowRight'] = true;
+                    keys['ArrowLeft'] = false;
+                } else {
+                    keys['ArrowLeft'] = false;
+                    keys['ArrowRight'] = false;
+                }
+                
+                // Visual feedback - change color based on intensity
+                const intensity = Math.min(1, distance / maxDistance);
+                joystickHandle.style.background = `rgba(255,169,77,${0.6 + intensity * 0.4})`;
+                joystickHandle.style.boxShadow = `0 0 ${10 + intensity * 10}px rgba(255,169,77,0.5)`;
+            }
+            
+            // Reset joystick to center position
+            function resetJoystick() {
+                joystickHandle.style.left = '50%';
+                joystickHandle.style.top = '50%';
+                joystickHandle.style.transform = 'translate(-50%, -50%)';
+                joystickHandle.style.background = 'rgba(255,169,77,0.8)';
+                joystickHandle.style.boxShadow = '0 0 10px rgba(255,169,77,0.5)';
+                
+                // Reset all directional keys
+                keys['ArrowUp'] = false;
+                keys['ArrowDown'] = false;
+                keys['ArrowLeft'] = false;
+                keys['ArrowRight'] = false;
+                
+                joystickActive = false;
+                joystickTouchId = null;
+            }
+            
+            // Touch event handlers
+            joystickContainer.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (!joystickActive) {
+                    updateJoystickCenter();
+                    joystickTouchId = e.changedTouches[0].identifier;
+                    joystickActive = true;
+                    const touch = e.changedTouches[0];
+                    updateJoystickPosition(touch.clientX, touch.clientY);
+                    joystickHandle.style.transform = 'translate(-50%, -50%) scale(0.95)';
+                }
             });
             
-            // Shoot button
-            setupTouchControl(shootButton, () => { 
-                if (canShoot) {
-                    shootLaser();
-                    canShoot = false;
-                    
-                    // Update cooldown indicator
-                    const cooldownIndicator = document.getElementById('shootCooldown');
-                    cooldownIndicator.textContent = 'Reloading...';
-                    cooldownIndicator.classList.remove('ready');
-                    
-                    // Reset cooldown
-                    setTimeout(() => {
-                        canShoot = true;
-                        cooldownIndicator.textContent = 'Shoot Ready';
-                        cooldownIndicator.classList.add('ready');
-                    }, shootCooldown);
+            joystickContainer.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (joystickActive) {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === joystickTouchId) {
+                            const touch = e.changedTouches[i];
+                            updateJoystickPosition(touch.clientX, touch.clientY);
+                            break;
+                        }
+                    }
                 }
+            });
+            
+            function handleTouchEnd(e) {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === joystickTouchId) {
+                        resetJoystick();
+                        break;
+                    }
+                }
+            }
+            
+            joystickContainer.addEventListener('touchend', handleTouchEnd);
+            joystickContainer.addEventListener('touchcancel', handleTouchEnd);
+            
+            // Reset on window resize
+            window.addEventListener('resize', function() {
+                updateJoystickCenter();
+                if (!joystickActive) {
+                    resetJoystick();
+                }
+            });
+            
+            // Initialize center position
+            updateJoystickCenter();
+        }
+
+        // Helper for mobile touch controls (for action buttons)
+        function setupTouchControl(element, startCallback, endCallback) {
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                element.classList.add('active');
+                if (startCallback) startCallback();
+            });
+            
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                element.classList.remove('active');
+                if (endCallback) endCallback();
+            });
+            
+            element.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                element.classList.remove('active');
+                if (endCallback) endCallback();
             });
         }
-    }
-    
-    // Helper for mobile touch controls
-    function setupTouchControl(element, startCallback, endCallback) {
-        element.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            element.classList.add('active');
-            if (startCallback) startCallback();
-        });
-        
-        element.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            element.classList.remove('active');
-            if (endCallback) endCallback();
-        });
-        
-        element.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            element.classList.remove('active');
-            if (endCallback) endCallback();
-        });
-    }
 
     function updateGameUI() {
         // Update lives display
